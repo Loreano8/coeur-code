@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coeur-code-v1';
+const CACHE_NAME = 'coeur-code-v2';
 const SHELL_FILES = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -17,11 +17,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for game data, cache-first for the static shell.
+// Network-first: always fetch the latest version when online.
+// Falls back to the last cached copy only if the network request fails (offline).
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return; // let MantleDB calls pass straight through
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
