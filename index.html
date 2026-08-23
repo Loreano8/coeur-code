@@ -155,6 +155,10 @@ const T = {
     editProfileBtn: "Changer",
     resumeSessionBtn: "↺ Reprendre la partie {code}",
     joiningAs: "Tu rejoins en tant que {name}.",
+    randomMatchBtn: "🎲 Partie surprise (avec un·e inconnu·e)",
+    randomMatchHint: "Aucune messagerie — juste le jeu de mots, rien d'autre.",
+    searchingLabel: "Recherche d'un·e partenaire…",
+    cancelSearchBtn: "Annuler",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
@@ -213,6 +217,10 @@ const T = {
     editProfileBtn: "Change",
     resumeSessionBtn: "↺ Resume game {code}",
     joiningAs: "Joining as {name}.",
+    randomMatchBtn: "🎲 Surprise match (with a stranger)",
+    randomMatchHint: "No chat — just the word game, nothing else.",
+    searchingLabel: "Looking for a partner…",
+    cancelSearchBtn: "Cancel",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
     createBtn: "Create a game",
@@ -343,6 +351,21 @@ async function saveRoom(room){
   }catch(e){ console.error('Erreur de sauvegarde', e); }
   return room;
 }
+async function loadRaw(key){
+  try{
+    const res = await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${key}`);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){ return null; }
+}
+async function saveRaw(key, data){
+  try{
+    await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+  }catch(e){ /* best effort */ }
+  return data;
+}
 
 function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
 function startPolling(fn){ stopPolling(); pollTimer = setInterval(fn, 2200); }
@@ -434,8 +457,10 @@ function renderLanding(){
         <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
         <button class="btn btn-secondary" id="joinBtn">${tr('joinBtn')}</button>
       </div>
+      <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;">${tr('randomMatchBtn')}</button>
+      <p class="hint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
     </div>
-    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a></div>
+    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="#" id="supportLink" style="color:inherit;">☕ Soutenir le jeu</a></div>
   `;
   document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
     b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
@@ -446,6 +471,7 @@ function renderLanding(){
   document.getElementById('editProfileBtn').onclick = renderProfileSetup;
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
+  document.getElementById('randomBtn').onclick = onRandomMatch;
   checkForResumableSession();
 }
 
@@ -466,6 +492,74 @@ async function checkForResumableSession(){
     else if(room.status === 'playing') renderGame(room);
     else renderEndScreen(room);
   };
+}
+
+function genId(){ return 'w' + Math.random().toString(36).slice(2, 10); }
+const QUEUE_KEY = 'matchmaking-queue';
+
+async function onRandomMatch(){
+  if(!myName){ renderProfileSetup(); return; }
+  const data = await loadRaw(QUEUE_KEY);
+  const now = Date.now();
+  let queue = (data && Array.isArray(data.waiting)) ? data.waiting : [];
+  queue = queue.filter(e => now - e.joinedAt < 120000); // drop anyone who's been waiting over 2 minutes
+
+  if(queue.length > 0){
+    const opponent = queue.shift();
+    await saveRaw(QUEUE_KEY, { waiting: queue });
+    const code = genCode();
+    const room = emptyRoom(code, opponent.name, opponent.lang || selectedLang, opponent.turnSeconds != null ? opponent.turnSeconds : selectedTurnSeconds);
+    room.players.p2 = { name: myName, word: null, guesses: [] };
+    room.status = 'words';
+    await saveRoom(room);
+    await saveRaw('match-' + opponent.id, { roomCode: code, role: 'p1' });
+    myRole = 'p2'; roomCode = code; currentLang = room.lang;
+    saveSession();
+    refreshBrand();
+    renderWordSetup(room);
+  } else {
+    const id = genId();
+    queue.push({ id, name: myName, lang: selectedLang, turnSeconds: selectedTurnSeconds, joinedAt: now });
+    await saveRaw(QUEUE_KEY, { waiting: queue });
+    renderSearching(id);
+  }
+}
+
+function renderSearching(waitingId){
+  stopPolling(); stopTick(); lastSeenKey = null;
+  setMusicMood('setup');
+  screenEl.innerHTML = `
+    <div class="card code-display">
+      <div style="margin-top:6px;color:var(--ink-soft);font-size:.9rem;">
+        <span class="waiting-pulse"></span>${tr('searchingLabel')}
+      </div>
+      <button class="btn btn-secondary" id="cancelSearchBtn" style="margin-top:20px;width:auto;">${tr('cancelSearchBtn')}</button>
+    </div>
+  `;
+  document.getElementById('cancelSearchBtn').onclick = async () => {
+    stopPolling();
+    const data = await loadRaw(QUEUE_KEY);
+    let queue = (data && Array.isArray(data.waiting)) ? data.waiting : [];
+    queue = queue.filter(e => e.id !== waitingId);
+    await saveRaw(QUEUE_KEY, { waiting: queue });
+    renderLanding();
+  };
+  startPolling(async () => {
+    const match = await loadRaw('match-' + waitingId);
+    if(match && match.roomCode){
+      stopPolling();
+      saveRaw('match-' + waitingId, {}); // best-effort cleanup
+      myRole = match.role; roomCode = match.roomCode;
+      saveSession();
+      const room = await loadRoom(roomCode);
+      if(!room){ renderLanding(); return; }
+      currentLang = room.lang || currentLang;
+      refreshBrand();
+      if(room.status === 'words') renderWordSetup(room);
+      else if(room.status === 'playing') renderGame(room);
+      else renderWaitingRoom(room);
+    }
+  });
 }
 
 function renderJoinForm(){
