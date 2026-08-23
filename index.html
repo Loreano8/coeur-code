@@ -41,6 +41,7 @@
   .toggle-row button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);}
   .toggle-row button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
   .field-label{text-align:center;font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .profile-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:.95rem;font-weight:600;}
 
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 24px;box-shadow:0 1px 2px rgba(43,38,48,.04);margin-bottom:16px;}
   label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
@@ -147,6 +148,12 @@ const T = {
     tagline: "Un mot secret chacun. Le premier qui perce le mot de l'autre a gagné.",
     nameLabel: "Ton prénom",
     namePlaceholder: "Ex : Léa",
+    profileTitle: "Bienvenue !",
+    profileHint: "Comment tu t'appelles ? On ne te le redemandera plus sur cet appareil.",
+    continueBtn: "Continuer",
+    greeting: "Salut {name} 👋",
+    editProfileBtn: "Changer",
+    joiningAs: "Tu rejoins en tant que {name}.",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
@@ -198,6 +205,12 @@ const T = {
     tagline: "Each of you picks a secret word. First to crack the other's word wins.",
     nameLabel: "Your first name",
     namePlaceholder: "e.g. Emma",
+    profileTitle: "Welcome!",
+    profileHint: "What's your first name? We won't ask again on this device.",
+    continueBtn: "Continue",
+    greeting: "Hi {name} 👋",
+    editProfileBtn: "Change",
+    joiningAs: "Joining as {name}.",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
     createBtn: "Create a game",
@@ -347,20 +360,56 @@ function spawnConfetti(){
 }
 
 /* ---------- Screens ---------- */
-function renderLanding(){
+function renderProfileSetup(){
   stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = selectedLang;
   refreshBrand();
   setMusicMood('setup');
-  if(!myName) myName = getSavedName();
   screenEl.innerHTML = `
     <div class="toggle-row">
       <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
       <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
     </div>
     <div class="card">
+      <h3 style="margin-bottom:6px;">${tr('profileTitle')}</h3>
+      <p class="hint" style="margin-bottom:16px;">${tr('profileHint')}</p>
       <label for="nameInput">${tr('nameLabel')}</label>
       <input type="text" id="nameInput" placeholder="${tr('namePlaceholder')}" maxlength="18" value="${myName || ''}">
+      <div id="profileError" class="error" style="display:none;"></div>
+      <button class="btn btn-primary" id="continueProfileBtn">${tr('continueBtn')}</button>
+    </div>
+  `;
+  document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
+    b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderProfileSetup(); };
+  });
+  document.getElementById('continueProfileBtn').onclick = () => {
+    const name = document.getElementById('nameInput').value.trim();
+    const errEl = document.getElementById('profileError');
+    if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
+    myName = name;
+    setSavedName(name);
+    renderLanding();
+  };
+}
+
+function renderLanding(){
+  stopPolling(); stopTick(); lastSeenKey = null;
+  const saved = getSavedName();
+  if(!saved){ renderProfileSetup(); return; }
+  myName = saved;
+  currentLang = selectedLang;
+  refreshBrand();
+  setMusicMood('setup');
+  screenEl.innerHTML = `
+    <div class="toggle-row">
+      <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
+      <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
+    </div>
+    <div class="card">
+      <div class="profile-row">
+        <span>${tr('greeting',{name:myName})}</span>
+        <button class="btn-link" id="editProfileBtn" style="width:auto;">${tr('editProfileBtn')}</button>
+      </div>
       <div class="field-label">${tr('turnDurationLabel')}</div>
       <div class="toggle-row" id="durationRow">
         ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
@@ -379,16 +428,15 @@ function renderLanding(){
   document.querySelectorAll('#durationRow button').forEach(b => {
     b.onclick = () => { selectedTurnSeconds = parseInt(b.getAttribute('data-dur'),10); renderLanding(); };
   });
+  document.getElementById('editProfileBtn').onclick = renderProfileSetup;
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
 }
 
 function renderJoinForm(){
-  const name = document.getElementById('nameInput').value.trim();
   screenEl.innerHTML = `
     <div class="card">
-      <label>${tr('nameLabel')}</label>
-      <input type="text" id="nameInput" maxlength="18" value="${name}">
+      <p class="hint" style="margin-bottom:16px;">${tr('joiningAs',{name:myName})}</p>
       <label for="codeInput">${tr('codeLabel')}</label>
       <input type="text" id="codeInput" placeholder="${tr('codePlaceholder')}" maxlength="5" style="text-transform:uppercase;">
       <div id="joinError" class="error" style="display:none;"></div>
@@ -401,13 +449,9 @@ function renderJoinForm(){
 }
 
 async function onCreateRoom(){
-  const name = document.getElementById('nameInput').value.trim();
-  const errEl = document.getElementById('landingError');
-  if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
-  myName = name;
-  setSavedName(name);
+  if(!myName){ renderProfileSetup(); return; }
   const code = genCode();
-  const room = emptyRoom(code, name, selectedLang, selectedTurnSeconds);
+  const room = emptyRoom(code, myName, selectedLang, selectedTurnSeconds);
   await saveRoom(room);
   myRole = 'p1'; roomCode = code; currentLang = room.lang;
   refreshBrand();
@@ -415,18 +459,15 @@ async function onCreateRoom(){
 }
 
 async function onJoinRoom(){
-  const name = document.getElementById('nameInput').value.trim();
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const errEl = document.getElementById('joinError');
-  if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
   if(!code){ errEl.textContent = tr('errNeedCode'); errEl.style.display='block'; return; }
   const room = await loadRoom(code);
   if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
   if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
-  myName = name; myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
-  setSavedName(name);
+  myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
   refreshBrand();
-  room.players.p2 = { name, word: null, guesses: [] };
+  room.players.p2 = { name: myName, word: null, guesses: [] };
   room.status = 'words';
   await saveRoom(room);
   renderWordSetup(room);
