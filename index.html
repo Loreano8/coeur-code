@@ -268,6 +268,13 @@ let lastSeenKey = null; // fingerprint of the last rendered room state, to avoid
 const screenEl = document.getElementById('screen');
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+function getSavedName(){
+  try{ return localStorage.getItem('cc_playerName') || ''; }catch(e){ return ''; }
+}
+function setSavedName(name){
+  try{ localStorage.setItem('cc_playerName', name); }catch(e){ /* storage unavailable — just skip */ }
+}
+
 function normWord(w){
   return w.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z]/g,'');
 }
@@ -345,6 +352,7 @@ function renderLanding(){
   currentLang = selectedLang;
   refreshBrand();
   setMusicMood('setup');
+  if(!myName) myName = getSavedName();
   screenEl.innerHTML = `
     <div class="toggle-row">
       <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
@@ -363,6 +371,7 @@ function renderLanding(){
         <button class="btn btn-secondary" id="joinBtn">${tr('joinBtn')}</button>
       </div>
     </div>
+    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a></div>
   `;
   document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
     b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
@@ -396,6 +405,7 @@ async function onCreateRoom(){
   const errEl = document.getElementById('landingError');
   if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
   myName = name;
+  setSavedName(name);
   const code = genCode();
   const room = emptyRoom(code, name, selectedLang, selectedTurnSeconds);
   await saveRoom(room);
@@ -414,6 +424,7 @@ async function onJoinRoom(){
   if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
   if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
   myName = name; myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
+  setSavedName(name);
   refreshBrand();
   room.players.p2 = { name, word: null, guesses: [] };
   room.status = 'words';
