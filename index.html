@@ -324,6 +324,7 @@ function renderLanding(){
   stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = selectedLang;
   refreshBrand();
+  setMusicMood('setup');
   screenEl.innerHTML = `
     <div class="toggle-row">
       <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
@@ -401,6 +402,7 @@ async function onJoinRoom(){
 }
 
 function renderWaitingRoom(room){
+  setMusicMood('setup');
   screenEl.innerHTML = `
     <div class="card code-display">
       <div class="hint">${tr('shareHint')}</div>
@@ -431,6 +433,7 @@ function renderWordSetup(room){
   stopPolling(); stopTick();
   currentLang = room.lang || currentLang;
   refreshBrand();
+  setMusicMood('setup');
   const me = room.players[myRole];
   const already = !!me.word;
   screenEl.innerHTML = `
@@ -482,6 +485,7 @@ function renderGame(room){
   refreshBrand();
   if(room.status === 'finished'){ renderEndScreen(room); return; }
   lastSeenKey = fingerprint(room);
+  setMusicMood('playing');
 
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   const me = room.players[myRole];
@@ -680,6 +684,7 @@ function renderEndScreen(room){
   const iWon = room.winner === myRole;
   const p1 = room.players.p1, p2 = room.players.p2;
   const scores = room.scores || {p1:0,p2:0};
+  setMusicMood(iWon ? 'victory' : 'defeat');
   screenEl.innerHTML = `
     <div class="card winner-screen">
       <div class="trophy">🏆</div>
@@ -733,10 +738,27 @@ function renderEndScreen(room){
 
 /* ---------- Ambient background music (generated, no external file) ---------- */
 let musicEnabled = true;
-let audioCtx = null, masterGain = null, noteInterval = null, stepIndex = 0;
-const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C D E G A C — cheerful major pentatonic
-const MELODY_PATTERN = [0,2,4,2, 3,2,1,0, 2,4,5,4, 3,2,0,null]; // null = a little rest for breathing room
-const STEP_MS = 300;
+let audioCtx = null, masterGain = null, moodTimers = [], currentMood = 'setup';
+
+const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C D E G A C — major pentatonic
+const SETUP_PATTERN   = [0,2,4,2, 3,2,1,0, 2,4,5,4, 3,2,0,null];
+const PLAYING_PATTERN = [0,null,2,4, 5,4,2,null, 0,2,4,2, 3,5,4,null];
+const VICTORY_SEQUENCE = [
+  {freq:261.63, at:0.00, decay:0.5, peak:0.09},
+  {freq:329.63, at:0.13, decay:0.5, peak:0.09},
+  {freq:392.00, at:0.26, decay:0.5, peak:0.09},
+  {freq:523.25, at:0.39, decay:0.5, peak:0.10},
+  {freq:659.25, at:0.52, decay:0.5, peak:0.10},
+  {freq:392.00, at:0.68, decay:1.3, peak:0.12},
+  {freq:523.25, at:0.68, decay:1.3, peak:0.12},
+  {freq:659.25, at:0.68, decay:1.3, peak:0.12}
+];
+const DEFEAT_SEQUENCE = [
+  {freq:293.66, at:0.00, decay:0.6, peak:0.07},
+  {freq:261.63, at:0.35, decay:0.6, peak:0.065},
+  {freq:220.00, at:0.70, decay:0.7, peak:0.06},
+  {freq:196.00, at:1.05, decay:1.3, peak:0.055}
+];
 
 function ensureAudioStarted(){
   if(!musicEnabled) return;
@@ -746,68 +768,104 @@ function ensureAudioStarted(){
     audioCtx = new Ctx();
   }
   if(audioCtx.state === 'suspended') audioCtx.resume();
-  if(!masterGain) startMusicGraph();
+  if(!masterGain && currentMood) applyMood(currentMood);
 }
 
-function playNote(freq, time){
-  // main soft tone
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.0001, time);
-  g.gain.exponentialRampToValueAtTime(0.09, time + 0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.9);
-  osc.connect(g); g.connect(masterGain);
-  osc.start(time); osc.stop(time + 1.0);
-
-  // gentle shimmer one octave up, quieter — gives it a music-box sparkle
-  const osc2 = audioCtx.createOscillator();
-  osc2.type = 'sine';
-  osc2.frequency.value = freq * 2;
-  const g2 = audioCtx.createGain();
-  g2.gain.setValueAtTime(0.0001, time);
-  g2.gain.exponentialRampToValueAtTime(0.025, time + 0.02);
-  g2.gain.exponentialRampToValueAtTime(0.0001, time + 0.7);
-  osc2.connect(g2); g2.connect(masterGain);
-  osc2.start(time); osc2.stop(time + 0.8);
-}
-
-function scheduleStep(){
-  const idx = MELODY_PATTERN[stepIndex % MELODY_PATTERN.length];
-  if(idx !== null){
-    playNote(SCALE[idx], audioCtx.currentTime + 0.02);
+function ensureMasterGain(){
+  if(!masterGain){
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 1;
+    masterGain.connect(audioCtx.destination);
   }
-  stepIndex++;
+  return masterGain;
 }
 
-function startMusicGraph(){
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 1;
-  masterGain.connect(audioCtx.destination);
-  stepIndex = 0;
-  scheduleStep();
-  noteInterval = setInterval(scheduleStep, STEP_MS);
+function playNote(freq, time, opts){
+  opts = opts || {};
+  const wave = opts.wave || 'sine';
+  const peak = opts.peak != null ? opts.peak : 0.09;
+  const decay = opts.decay != null ? opts.decay : 0.9;
+  const shimmer = opts.shimmer !== false;
+  const g = ensureMasterGain();
+
+  const osc = audioCtx.createOscillator();
+  osc.type = wave;
+  osc.frequency.value = freq;
+  const gn = audioCtx.createGain();
+  gn.gain.setValueAtTime(0.0001, time);
+  gn.gain.exponentialRampToValueAtTime(peak, time + 0.02);
+  gn.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+  osc.connect(gn); gn.connect(g);
+  osc.start(time); osc.stop(time + decay + 0.05);
+
+  if(shimmer){
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = freq * 2;
+    const g2 = audioCtx.createGain();
+    g2.gain.setValueAtTime(0.0001, time);
+    g2.gain.exponentialRampToValueAtTime(peak * 0.28, time + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, time + decay * 0.8);
+    osc2.connect(g2); g2.connect(g);
+    osc2.start(time); osc2.stop(time + decay * 0.8 + 0.05);
+  }
 }
 
-function stopMusicGraph(){
-  if(noteInterval){ clearInterval(noteInterval); noteInterval = null; }
+function startLoop(pattern, stepMs, opts){
+  ensureMasterGain();
+  let stepIndex = 0;
+  const step = () => {
+    const idx = pattern[stepIndex % pattern.length];
+    if(idx !== null) playNote(SCALE[idx], audioCtx.currentTime + 0.02, opts);
+    stepIndex++;
+  };
+  step();
+  moodTimers.push(setInterval(step, stepMs));
+}
+
+function playOneShot(sequence, opts){
+  ensureMasterGain();
+  const now = audioCtx.currentTime;
+  sequence.forEach(n => {
+    playNote(n.freq, now + n.at, Object.assign({}, opts, n));
+  });
+}
+
+function stopCurrentMood(){
+  moodTimers.forEach(id => clearInterval(id));
+  moodTimers = [];
   const oldGain = masterGain;
   if(oldGain && audioCtx){
     try{
       oldGain.gain.cancelScheduledValues(audioCtx.currentTime);
       oldGain.gain.setValueAtTime(oldGain.gain.value, audioCtx.currentTime);
-      oldGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+      oldGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
     }catch(e){}
   }
-  setTimeout(() => { if(oldGain) oldGain.disconnect(); }, 600);
+  setTimeout(() => { if(oldGain) oldGain.disconnect(); }, 500);
   masterGain = null;
+}
+
+function applyMood(mood){
+  if(mood === 'setup') startLoop(SETUP_PATTERN, 300, {wave:'sine', peak:0.09, decay:0.9});
+  else if(mood === 'playing') startLoop(PLAYING_PATTERN, 260, {wave:'sine', peak:0.08, decay:0.7});
+  else if(mood === 'victory') playOneShot(VICTORY_SEQUENCE, {wave:'triangle', shimmer:true});
+  else if(mood === 'defeat') playOneShot(DEFEAT_SEQUENCE, {wave:'sine', shimmer:false});
+}
+
+function setMusicMood(mood){
+  const isLoop = mood === 'setup' || mood === 'playing';
+  if(isLoop && mood === currentMood && masterGain){ currentMood = mood; return; }
+  currentMood = mood;
+  if(!musicEnabled) return;
+  stopCurrentMood();
+  if(audioCtx) applyMood(mood);
 }
 
 document.getElementById('musicToggle').onclick = () => {
   musicEnabled = !musicEnabled;
   document.getElementById('musicToggle').textContent = musicEnabled ? '🔊' : '🔇';
-  if(musicEnabled){ ensureAudioStarted(); } else { stopMusicGraph(); }
+  if(musicEnabled){ ensureAudioStarted(); } else { stopCurrentMood(); }
 };
 document.addEventListener('click', function firstGestureUnlock(){
   ensureAudioStarted();
