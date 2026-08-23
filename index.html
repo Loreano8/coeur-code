@@ -20,17 +20,7 @@
     --line:#E4DEEE;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Inter',sans-serif;
-    min-height:100vh;
-    display:flex;
-    align-items:flex-start;
-    justify-content:center;
-    padding:32px 16px 60px;
-  }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 60px;}
   .app{width:100%;max-width:520px;}
   h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
   .brand{text-align:center;margin-bottom:20px;}
@@ -40,9 +30,10 @@
   .signal .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);margin:0 10px;box-shadow:0 0 0 5px rgba(232,162,61,.18);}
   .brand p{color:var(--ink-soft);font-size:.92rem;margin-top:2px;}
 
-  .lang-toggle{display:flex;justify-content:center;gap:6px;margin-bottom:16px;}
-  .lang-toggle button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);}
-  .lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .toggle-row{display:flex;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .toggle-row button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .toggle-row button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .field-label{text-align:center;font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
 
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 24px;box-shadow:0 1px 2px rgba(43,38,48,.04);margin-bottom:16px;}
   label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
@@ -56,6 +47,7 @@
   .btn-row{display:flex;gap:10px;margin-top:4px;}
   .btn-row .btn{margin:0;}
   .btn-link{background:none;border:none;color:var(--ink-soft);font-size:.8rem;text-decoration:underline;cursor:pointer;padding:6px;width:100%;}
+  .btn-sm{padding:9px 14px;font-size:.85rem;width:auto;}
 
   .error{color:var(--p1);font-size:.85rem;margin:-8px 0 14px;}
   .hint{color:var(--ink-soft);font-size:.82rem;margin-top:-8px;}
@@ -89,11 +81,17 @@
   .turn-banner{text-align:center;padding:9px 12px;border-radius:10px;font-weight:600;font-size:.92rem;margin-bottom:10px;}
   .turn-banner.mine{background:var(--p1-soft);color:var(--p1);}
   .turn-banner.theirs{background:var(--p2-soft);color:var(--p2);}
+  .turn-banner.pause{background:#FFF3DC;color:#8A6416;}
 
-  .timer-wrap{margin-bottom:16px;}
+  .timer-wrap{margin-bottom:10px;}
   .timer-bar-outer{width:100%;height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
-  .timer-bar-inner{height:100%;background:var(--gold);transition:width 1s linear;}
+  .timer-bar-inner{height:100%;background:var(--gold);}
   .timer-text{text-align:center;font-size:.74rem;color:var(--ink-soft);margin-top:5px;}
+
+  .pause-box{background:#FFF9EE;border:1px solid #F0DCA8;border-radius:12px;padding:14px;text-align:center;margin-bottom:16px;}
+  .pause-box p{margin:0 0 10px;font-size:.88rem;color:#8A6416;font-weight:600;}
+  .pause-box .btn-row{gap:8px;}
+  .pause-link-row{text-align:center;margin-bottom:14px;}
 
   .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;}
   .key{padding:10px 0;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink);}
@@ -132,7 +130,8 @@ const T = {
     tagline: "Un mot secret chacun. Le premier qui perce le mot de l'autre a gagné.",
     nameLabel: "Ton prénom",
     namePlaceholder: "Ex : Léa",
-    wordLangLabel: "Langue du jeu (interface + mots)",
+    turnDurationLabel: "Durée de chaque tour",
+    turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
     joinBtn: "Rejoindre",
     errNeedName: "Entre ton prénom pour continuer.",
@@ -147,8 +146,7 @@ const T = {
     copyBtn: "Copier le code",
     waitingPartner: "En attente de ton/ta partenaire…",
     chooseWordTitle: "Choisis ton mot secret",
-    chooseWordHintFr: "Lettres uniquement, accents autorisés (é, è, ê, à, ç...), sans espaces. 3 à 15 lettres. Ton/ta partenaire ne le verra jamais affiché.",
-    chooseWordHintEn: "Letters only, no spaces. 3 to 15 letters. Your partner will never see it written out.",
+    chooseWordHint: "Lettres uniquement, sans accents ni espaces. 3 à 15 lettres. Ton/ta partenaire ne le verra jamais affiché.",
     wordPlaceholder: "Ex : OCEAN",
     errWordLen: "Choisis un mot de 3 lettres minimum.",
     submitWordBtn: "Valider mon mot",
@@ -167,13 +165,21 @@ const T = {
     theyWonSub: "Ce sera pour la prochaine manche.",
     replayBtn: "Manche suivante",
     resetScoreBtn: "Remettre le score à zéro",
-    scoreLabel: "Score de la série"
+    scoreLabel: "Score de la série",
+    pauseRequestBtn: "Demander une pause",
+    pausePendingSelf: "Demande de pause envoyée — en attente de {name}…",
+    pausePendingOther: "{name} demande une pause",
+    acceptBtn: "Accepter",
+    declineBtn: "Refuser",
+    pauseActive: "Partie en pause",
+    resumeBtn: "Reprendre la partie"
   },
   en: {
     tagline: "Each of you picks a secret word. First to crack the other's word wins.",
     nameLabel: "Your first name",
     namePlaceholder: "e.g. Emma",
-    wordLangLabel: "Game language (interface + words)",
+    turnDurationLabel: "Time per turn",
+    turnDurationNone: "No timer",
     createBtn: "Create a game",
     joinBtn: "Join",
     errNeedName: "Enter your first name to continue.",
@@ -188,8 +194,7 @@ const T = {
     copyBtn: "Copy code",
     waitingPartner: "Waiting for your partner…",
     chooseWordTitle: "Choose your secret word",
-    chooseWordHintFr: "Letters only, accents allowed (é, è, ê, à, ç...), no spaces. 3 to 15 letters. Your partner will never see it written out.",
-    chooseWordHintEn: "Letters only, no spaces. 3 to 15 letters. Your partner will never see it written out.",
+    chooseWordHint: "Letters only, no accents or spaces. 3 to 15 letters. Your partner will never see it written out.",
     wordPlaceholder: "e.g. OCEAN",
     errWordLen: "Pick a word of at least 3 letters.",
     submitWordBtn: "Confirm my word",
@@ -208,7 +213,14 @@ const T = {
     theyWonSub: "Better luck next round.",
     replayBtn: "Next round",
     resetScoreBtn: "Reset the score",
-    scoreLabel: "Series score"
+    scoreLabel: "Series score",
+    pauseRequestBtn: "Request a pause",
+    pausePendingSelf: "Pause request sent — waiting for {name}…",
+    pausePendingOther: "{name} is requesting a pause",
+    acceptBtn: "Accept",
+    declineBtn: "Decline",
+    pauseActive: "Game paused",
+    resumeBtn: "Resume the game"
   }
 };
 let currentLang = 'fr';
@@ -218,89 +230,74 @@ function tr(key, vars){
   if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(vars[k]); } }
   return s;
 }
-function refreshBrand(){
-  document.getElementById('brandTagline').textContent = tr('tagline');
-}
+function refreshBrand(){ document.getElementById('brandTagline').textContent = tr('tagline'); }
 
 /* ---------- State ---------- */
-let myRole = null;      // 'p1' | 'p2'
+let myRole = null;
 let roomCode = null;
 let myName = '';
-let selectedLang = 'fr'; // chosen at creation time
+let selectedLang = 'fr';
+let selectedTurnSeconds = 30;
 let pollTimer = null;
 let tickTimer = null;
+let lastSeenKey = null; // fingerprint of the last rendered room state, to avoid needless re-renders
 
-const TURN_SECONDS = 30;
 const screenEl = document.getElementById('screen');
-const BASE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const FR_EXTRA = ['É','È','Ê','À','Ç','Ô','Î','Û','Ù'];
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
-function alphabetFor(lang){
-  return lang === 'fr' ? BASE_ALPHABET.concat(FR_EXTRA) : BASE_ALPHABET.slice();
+function normWord(w){
+  return w.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z]/g,'');
 }
-
-function normWord(w, lang){
-  let up = w.toUpperCase().trim();
-  if(lang === 'fr'){
-    return up.replace(/[^A-ZÉÈÊÀÇÔÎÛÙ]/g, '');
-  }
-  up = up.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  return up.replace(/[^A-Z]/g, '');
-}
-
 function genCode(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let c = '';
   for(let i=0;i<5;i++) c += chars[Math.floor(Math.random()*chars.length)];
   return c;
 }
-
-function emptyRoom(code, p1name, lang){
+function emptyRoom(code, p1name, lang, turnSeconds){
   return {
-    code,
-    createdAt: Date.now(),
-    lang,
-    players: {
-      p1: { name: p1name, word: null, guesses: [] },
-      p2: null
-    },
+    code, createdAt: Date.now(), lang, turnSeconds,
+    players: { p1: { name: p1name, word: null, guesses: [] }, p2: null },
     turn: 'p1',
     turnStartedAt: null,
     status: 'waiting',
     winner: null,
     scores: { p1: 0, p2: 0 },
-    round: 1
+    round: 1,
+    pause: { status: 'none', requestedBy: null, frozenAt: null }
   };
 }
 
 /* ---------- Storage (MantleDB — public, no-account JSON store) ---------- */
 const MANTLE_NS = 'coeur-code-bj2026';
-
 async function loadRoom(code){
   try{
     const res = await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${code}`);
     if(!res.ok) return null;
     return await res.json();
-  }catch(e){
-    return null;
-  }
+  }catch(e){ return null; }
 }
 async function saveRoom(room){
   try{
     await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${room.code}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(room)
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
     });
-  }catch(e){
-    console.error('Erreur de sauvegarde', e);
-  }
+  }catch(e){ console.error('Erreur de sauvegarde', e); }
   return room;
 }
 
 function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
 function startPolling(fn){ stopPolling(); pollTimer = setInterval(fn, 2200); }
 function stopTick(){ if(tickTimer){ clearInterval(tickTimer); tickTimer=null; } }
+
+function fingerprint(room){
+  return JSON.stringify({
+    status: room.status, turn: room.turn, turnStartedAt: room.turnStartedAt,
+    p1g: room.players.p1 && room.players.p1.guesses, p2g: room.players.p2 && room.players.p2.guesses,
+    p1w: !!(room.players.p1 && room.players.p1.word), p2w: !!(room.players.p2 && room.players.p2.word),
+    pause: room.pause, scores: room.scores, round: room.round, winner: room.winner
+  });
+}
 
 /* ---------- Confetti ---------- */
 function spawnConfetti(){
@@ -319,19 +316,22 @@ function spawnConfetti(){
 }
 
 /* ---------- Screens ---------- */
-
 function renderLanding(){
-  stopPolling(); stopTick();
+  stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = selectedLang;
   refreshBrand();
   screenEl.innerHTML = `
-    <div class="lang-toggle">
+    <div class="toggle-row">
       <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
       <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
     </div>
     <div class="card">
       <label for="nameInput">${tr('nameLabel')}</label>
       <input type="text" id="nameInput" placeholder="${tr('namePlaceholder')}" maxlength="18" value="${myName || ''}">
+      <div class="field-label">${tr('turnDurationLabel')}</div>
+      <div class="toggle-row" id="durationRow">
+        ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
+      </div>
       <div id="landingError" class="error" style="display:none;"></div>
       <div class="btn-row">
         <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
@@ -339,8 +339,11 @@ function renderLanding(){
       </div>
     </div>
   `;
-  document.querySelectorAll('.lang-toggle button').forEach(b => {
+  document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
     b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
+  });
+  document.querySelectorAll('#durationRow button').forEach(b => {
+    b.onclick = () => { selectedTurnSeconds = parseInt(b.getAttribute('data-dur'),10); renderLanding(); };
   });
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
@@ -369,11 +372,9 @@ async function onCreateRoom(){
   if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
   myName = name;
   const code = genCode();
-  const room = emptyRoom(code, name, selectedLang);
+  const room = emptyRoom(code, name, selectedLang, selectedTurnSeconds);
   await saveRoom(room);
-  myRole = 'p1';
-  roomCode = code;
-  currentLang = room.lang;
+  myRole = 'p1'; roomCode = code; currentLang = room.lang;
   refreshBrand();
   renderWaitingRoom(room);
 }
@@ -387,10 +388,7 @@ async function onJoinRoom(){
   const room = await loadRoom(code);
   if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
   if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
-  myName = name;
-  myRole = 'p2';
-  roomCode = code;
-  currentLang = room.lang || 'fr';
+  myName = name; myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
   refreshBrand();
   room.players.p2 = { name, word: null, guesses: [] };
   room.status = 'words';
@@ -431,11 +429,10 @@ function renderWordSetup(room){
   refreshBrand();
   const me = room.players[myRole];
   const already = !!me.word;
-  const hint = room.lang === 'fr' ? tr('chooseWordHintFr') : tr('chooseWordHintEn');
   screenEl.innerHTML = `
     <div class="card">
       <h3 style="margin-bottom:6px;">${tr('chooseWordTitle')}</h3>
-      <p class="hint" style="margin-bottom:16px;">${hint}</p>
+      <p class="hint" style="margin-bottom:16px;">${tr('chooseWordHint')}</p>
       ${already
         ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>${tr('wordSavedWaiting')}</div>`
         : `<input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15">
@@ -447,7 +444,7 @@ function renderWordSetup(room){
   if(!already){
     document.getElementById('submitWordBtn').onclick = async () => {
       const raw = document.getElementById('wordInput').value;
-      const word = normWord(raw, room.lang);
+      const word = normWord(raw);
       const errEl = document.getElementById('wordError');
       if(word.length < 3){ errEl.textContent = tr('errWordLen'); errEl.style.display='block'; return; }
       const fresh = await loadRoom(roomCode);
@@ -460,14 +457,13 @@ function renderWordSetup(room){
       renderWordSetup(fresh);
     };
   }
+  // Only watch for the game actually starting — never redraw this screen otherwise,
+  // so it never wipes out what the person is currently typing.
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
-    if(!fresh) return;
-    if(fresh.status === 'playing'){
+    if(fresh && fresh.status === 'playing'){
       stopPolling();
       renderGame(fresh);
-    } else {
-      renderWordSetup(fresh);
     }
   });
 }
@@ -481,29 +477,44 @@ function renderGame(room){
   currentLang = room.lang || currentLang;
   refreshBrand();
   if(room.status === 'finished'){ renderEndScreen(room); return; }
+  lastSeenKey = fingerprint(room);
 
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   const me = room.players[myRole];
   const opp = room.players[oppRole];
   const myTurn = room.turn === myRole;
+  const pause = room.pause || {status:'none'};
+  const hasTimer = !!room.turnSeconds;
 
   const oppMasked = maskedWord(opp.word, me.guesses);
   const myMasked = maskedWord(me.word, opp.guesses);
-  const alphabet = alphabetFor(room.lang);
   const scores = room.scores || {p1:0,p2:0};
+
+  let pauseBlockHtml = '';
+  if(pause.status === 'pending'){
+    if(pause.requestedBy === myRole){
+      pauseBlockHtml = `<div class="pause-box"><p>${tr('pausePendingSelf',{name:opp.name})}</p></div>`;
+    } else {
+      pauseBlockHtml = `<div class="pause-box"><p>${tr('pausePendingOther',{name:opp.name})}</p>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" id="acceptPauseBtn">${tr('acceptBtn')}</button>
+          <button class="btn btn-secondary btn-sm" id="declinePauseBtn">${tr('declineBtn')}</button>
+        </div></div>`;
+    }
+  } else if(pause.status === 'active'){
+    pauseBlockHtml = `<div class="pause-box"><p>${tr('pauseActive')}</p>
+      <button class="btn btn-primary btn-sm" id="resumeBtn" style="width:auto;">${tr('resumeBtn')}</button></div>`;
+  }
+
+  const showTimer = hasTimer && pause.status === 'none';
+  const showPauseRequestLink = pause.status === 'none';
 
   screenEl.innerHTML = `
     <div class="card">
       <div class="players-row">
-        <div class="player-chip ${myRole}">
-          <div class="role-label">${tr('youLabel')}</div>
-          <div class="name">${me.name}</div>
-        </div>
+        <div class="player-chip ${myRole}"><div class="role-label">${tr('youLabel')}</div><div class="name">${me.name}</div></div>
         <div class="link-mid">⟷</div>
-        <div class="player-chip ${oppRole}">
-          <div class="role-label">${tr('partnerLabel')}</div>
-          <div class="name">${opp.name}</div>
-        </div>
+        <div class="player-chip ${oppRole}"><div class="role-label">${tr('partnerLabel')}</div><div class="name">${opp.name}</div></div>
       </div>
 
       <div class="score-row">
@@ -512,73 +523,119 @@ function renderGame(room){
         <div class="score-item"><span class="score-name">${opp.name}</span><span class="score-num">${scores[oppRole]||0}</span></div>
       </div>
 
-      <div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">
-        ${myTurn ? tr('yourTurn') : tr('partnerThinking',{name:opp.name})}
-      </div>
+      ${pauseBlockHtml}
 
+      ${pause.status === 'none' ? `<div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">${myTurn ? tr('yourTurn') : tr('partnerThinking',{name:opp.name})}</div>` : ''}
+
+      ${showTimer ? `
       <div class="timer-wrap">
         <div class="timer-bar-outer"><div class="timer-bar-inner" id="timerBar" style="width:100%;"></div></div>
-        <div class="timer-text"><span id="timerText">${TURN_SECONDS}s</span> · ${tr('timeLeftLabel')}</div>
-      </div>
+        <div class="timer-text"><span id="timerText">${room.turnSeconds}s</span> · ${tr('timeLeftLabel')}</div>
+      </div>` : ''}
+
+      ${showPauseRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="pauseRequestBtn">${tr('pauseRequestBtn')}</button></div>` : ''}
 
       <div class="section-label">${tr('opponentWordLabel',{name:opp.name})}</div>
-      <div class="word-row theirs">
-        ${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
-      </div>
+      <div class="word-row theirs">${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
 
       <div class="keyboard" id="keyboard">
-        ${alphabet.map(letter => {
+        ${ALPHABET.map(letter => {
           const guessed = me.guesses.includes(letter);
           const hit = guessed && opp.word.includes(letter);
           const miss = guessed && !hit;
-          const disabled = !myTurn || guessed;
+          const disabled = !myTurn || guessed || pause.status !== 'none';
           const cls = hit ? 'hit' : (miss ? 'miss' : '');
           return `<button class="key ${cls}" data-letter="${letter}" ${disabled?'disabled':''}>${letter}</button>`;
         }).join('')}
       </div>
 
       <div class="section-label">${tr('yourWordLabel',{name:opp.name})}</div>
-      <div class="word-row mine">
-        ${myMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
-      </div>
+      <div class="word-row mine">${myMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
     </div>
     <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
   `;
 
-  if(myTurn){
+  if(myTurn && pause.status === 'none'){
     document.querySelectorAll('#keyboard .key').forEach(btn => {
       btn.onclick = () => onGuess(btn.getAttribute('data-letter'));
     });
   }
+  const pauseBtn = document.getElementById('pauseRequestBtn');
+  if(pauseBtn) pauseBtn.onclick = onRequestPause;
+  const acceptBtn = document.getElementById('acceptPauseBtn');
+  if(acceptBtn) acceptBtn.onclick = onAcceptPause;
+  const declineBtn = document.getElementById('declinePauseBtn');
+  if(declineBtn) declineBtn.onclick = onResolvePause;
+  const resumeBtn = document.getElementById('resumeBtn');
+  if(resumeBtn) resumeBtn.onclick = onResolvePause;
 
-  const turnStartedAt = room.turnStartedAt || Date.now();
-  tickTimer = setInterval(() => {
-    const elapsed = (Date.now() - turnStartedAt) / 1000;
-    const remaining = Math.max(0, Math.ceil(TURN_SECONDS - elapsed));
-    const bar = document.getElementById('timerBar');
-    const txt = document.getElementById('timerText');
-    if(bar) bar.style.width = Math.max(0,(remaining/TURN_SECONDS*100)) + '%';
-    if(txt) txt.textContent = remaining + 's';
-    if(remaining <= 0){
-      clearInterval(tickTimer); tickTimer = null;
-      if(myTurn) autoSkipTurn(turnStartedAt);
-    }
-  }, 1000);
+  if(showTimer){
+    const turnStartedAt = room.turnStartedAt || Date.now();
+    const updateTimer = () => {
+      const elapsed = (Date.now() - turnStartedAt) / 1000;
+      const remaining = Math.max(0, Math.ceil(room.turnSeconds - elapsed));
+      const bar = document.getElementById('timerBar');
+      const txt = document.getElementById('timerText');
+      if(bar) bar.style.width = Math.max(0,(remaining/room.turnSeconds*100)) + '%';
+      if(txt) txt.textContent = remaining + 's';
+      return remaining;
+    };
+    updateTimer(); // set the correct value immediately, no flash back to full
+    tickTimer = setInterval(() => {
+      const remaining = updateTimer();
+      if(remaining <= 0){
+        clearInterval(tickTimer); tickTimer = null;
+        if(myTurn) autoSkipTurn(turnStartedAt);
+      }
+    }, 1000);
+  }
 
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
     if(!fresh) return;
-    renderGame(fresh);
+    if(fresh.status === 'finished'){ renderEndScreen(fresh); return; }
+    const fp = fingerprint(fresh);
+    if(fp !== lastSeenKey){
+      renderGame(fresh); // something real changed — redraw
+    }
+    // otherwise: nothing changed, let the local 1s tick keep counting smoothly
   });
+}
+
+async function onRequestPause(){
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh || fresh.status !== 'playing' || fresh.pause.status !== 'none'){ renderGame(fresh); return; }
+  fresh.pause = { status: 'pending', requestedBy: myRole, frozenAt: Date.now() };
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+async function onAcceptPause(){
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh || fresh.pause.status !== 'pending'){ renderGame(fresh); return; }
+  fresh.pause.status = 'active';
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+async function onResolvePause(){
+  // used both to decline a pending request and to resume an active pause
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh || fresh.pause.status === 'none'){ renderGame(fresh); return; }
+  const frozenDuration = Date.now() - (fresh.pause.frozenAt || Date.now());
+  fresh.turnStartedAt = (fresh.turnStartedAt || Date.now()) + frozenDuration;
+  fresh.pause = { status: 'none', requestedBy: null, frozenAt: null };
+  await saveRoom(fresh);
+  renderGame(fresh);
 }
 
 async function autoSkipTurn(expectedTurnStartedAt){
   stopPolling();
   const fresh = await loadRoom(roomCode);
   if(!fresh || fresh.status !== 'playing') return;
-  if(fresh.turn !== myRole || fresh.turnStartedAt !== expectedTurnStartedAt){
-    renderGame(fresh);
-    return;
+  if(fresh.turn !== myRole || fresh.turnStartedAt !== expectedTurnStartedAt || fresh.pause.status !== 'none'){
+    renderGame(fresh); return;
   }
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   fresh.turn = oppRole;
@@ -593,12 +650,10 @@ async function onGuess(letter){
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   const me = fresh.players[myRole];
   const opp = fresh.players[oppRole];
-  if(fresh.turn !== myRole || me.guesses.includes(letter)){
-    renderGame(fresh);
-    return;
+  if(fresh.turn !== myRole || me.guesses.includes(letter) || fresh.pause.status !== 'none'){
+    renderGame(fresh); return;
   }
   me.guesses.push(letter);
-
   const oppLettersUnique = [...new Set(opp.word.split(''))];
   const won = oppLettersUnique.every(l => me.guesses.includes(l));
   if(won){
@@ -615,7 +670,7 @@ async function onGuess(letter){
 }
 
 function renderEndScreen(room){
-  stopPolling(); stopTick();
+  stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = room.lang || currentLang;
   refreshBrand();
   const iWon = room.winner === myRole;
@@ -652,6 +707,7 @@ function renderEndScreen(room){
     fresh.turn = fresh.round % 2 === 0 ? 'p2' : 'p1';
     fresh.turnStartedAt = null;
     fresh.winner = null;
+    fresh.pause = { status: 'none', requestedBy: null, frozenAt: null };
     await saveRoom(fresh);
     renderWordSetup(fresh);
   };
