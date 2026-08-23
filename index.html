@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cœur Codé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F4FB;
+    --surface:#FFFFFF;
+    --ink:#2B2630;
+    --ink-soft:#6B6475;
+    --p1:#E8546B;
+    --p1-soft:#FBE1E6;
+    --p2:#1F6F78;
+    --p2-soft:#DCEEEF;
+    --gold:#E8A23D;
+    --line:#E4DEEE;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px 60px;
+  }
+  .app{width:100%;max-width:520px;}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
+  .brand{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .brand h1{font-size:2.1rem;font-weight:700;letter-spacing:-0.01em;}
+  .brand .signal{
+    width:100%;
+    height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:10px 0 6px;
+  }
+  .signal .dash{
+    flex:1;
+    height:2px;
+    background:repeating-linear-gradient(90deg,var(--ink-soft) 0 6px, transparent 6px 12px);
+    opacity:.55;
+  }
+  .signal .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--gold);
+    margin:0 10px;
+    box-shadow:0 0 0 5px rgba(232,162,61,.18);
+  }
+  .brand p{color:var(--ink-soft);font-size:.92rem;margin-top:2px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:26px 24px;
+    box-shadow:0 1px 2px rgba(43,38,48,.04);
+    margin-bottom:16px;
+  }
+  label{
+    display:block;
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  input[type=text]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    font-size:1rem;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    margin-bottom:16px;
+  }
+  input[type=text]:focus{border-color:var(--p2);}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:13px 18px;
+    border-radius:10px;
+    border:none;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:.98rem;
+    cursor:pointer;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+  .btn-row{display:flex;gap:10px;margin-top:4px;}
+  .btn-row .btn{margin:0;}
+
+  .error{color:var(--p1);font-size:.85rem;margin:-8px 0 14px;}
+  .hint{color:var(--ink-soft);font-size:.82rem;margin-top:-8px;}
+
+  .code-display{
+    text-align:center;
+    padding:18px 0 6px;
+  }
+  .code-display .code{
+    font-family:'Fraunces',serif;
+    font-size:2.4rem;
+    font-weight:700;
+    letter-spacing:.18em;
+    color:var(--p2);
+  }
+  .waiting-pulse{
+    display:inline-block;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--p2);
+    animation:pulse 1.2s infinite ease-in-out;
+    margin-right:6px;
+  }
+  @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+  .players-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .player-chip{
+    flex:1;
+    background:var(--p1-soft);
+    border-radius:12px;
+    padding:10px 14px;
+    text-align:center;
+  }
+  .player-chip.p2{background:var(--p2-soft);}
+  .player-chip .name{font-weight:700;font-size:.92rem;}
+  .player-chip.p1 .name{color:var(--p1);}
+  .player-chip.p2 .name{color:var(--p2);}
+  .player-chip .role-label{font-size:.7rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .link-mid{flex:0 0 auto;font-size:.75rem;color:var(--ink-soft);}
+
+  .word-row{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:14px 0 4px;
+  }
+  .word-row .slot{
+    width:34px;height:42px;
+    border-bottom:3px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+    font-size:1.35rem;
+    font-weight:600;
+  }
+  .word-row.mine .slot{border-color:var(--p1);}
+  .word-row.theirs .slot{border-color:var(--p2);}
+  .section-label{
+    font-size:.78rem;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    text-align:center;
+    margin-top:18px;
+    margin-bottom:2px;
+  }
+
+  .turn-banner{
+    text-align:center;
+    padding:9px 12px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:.92rem;
+    margin-bottom:16px;
+  }
+  .turn-banner.mine{background:var(--p1-soft);color:var(--p1);}
+  .turn-banner.theirs{background:var(--p2-soft);color:var(--p2);}
+
+  .keyboard{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+    margin-top:16px;
+  }
+  .key{
+    padding:10px 0;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:.88rem;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .key:disabled{cursor:not-allowed;}
+  .key.hit{background:var(--p2);border-color:var(--p2);color:#fff;}
+  .key.miss{background:#F1EEF6;border-color:var(--line);color:var(--ink-soft);text-decoration:line-through;}
+  .key:not(:disabled):active{transform:scale(.94);}
+
+  .winner-screen{text-align:center;padding:20px 0 4px;}
+  .winner-screen .trophy{font-size:2.6rem;}
+  .winner-screen h2{font-size:1.6rem;margin-top:6px;}
+  .reveal-words{
+    display:flex;gap:12px;justify-content:center;margin:18px 0 6px;
+  }
+  .reveal-words div{
+    background:var(--bg);
+    border-radius:10px;
+    padding:10px 16px;
+    font-family:'Fraunces',serif;
+    font-size:1rem;
+  }
+
+  .footer-note{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:18px;line-height:1.5;}
+  .copy-row{display:flex;gap:8px;}
+  .copy-row .btn{flex:0 0 auto;padding:13px 16px;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="brand">
+    <h1>Cœur Codé</h1>
+    <div class="signal"><div class="dash"></div><div class="dot"></div><div class="dash"></div></div>
+    <p>Un mot secret chacun. Le premier qui perce le mot de l'autre a gagné.</p>
+  </div>
+  <div id="screen"></div>
+</div>
+
+<script>
+/* ---------- State ---------- */
+let myRole = null;      // 'p1' | 'p2'
+let roomCode = null;
+let myName = '';
+let pollTimer = null;
+
+const screenEl = document.getElementById('screen');
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+function normWord(w){
+  return w.toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // strip accents
+    .replace(/[^A-Z]/g,'');
+}
+
+function genCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for(let i=0;i<5;i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+function emptyRoom(code, p1name){
+  return {
+    code,
+    createdAt: Date.now(),
+    players: {
+      p1: { name: p1name, word: null, guesses: [] },
+      p2: null
+    },
+    turn: 'p1',
+    status: 'waiting', // waiting -> words -> playing -> finished
+    winner: null
+  };
+}
+
+const MANTLE_NS = 'coeur-code-bj2026'; // espace de stockage dédié à ce jeu
+
+async function loadRoom(code){
+  try{
+    const res = await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${code}`);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){
+    return null;
+  }
+}
+async function saveRoom(room){
+  try{
+    await fetch(`https://mantledb.sh/v2/${MANTLE_NS}/${room.code}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(room)
+    });
+  }catch(e){
+    console.error('Erreur de sauvegarde', e);
+  }
+  return room;
+}
+
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+function startPolling(fn){
+  stopPolling();
+  pollTimer = setInterval(fn, 2200);
+}
+
+/* ---------- Screens ---------- */
+
+function renderLanding(){
+  stopPolling();
+  screenEl.innerHTML = `
+    <div class="card">
+      <label for="nameInput">Ton prénom</label>
+      <input type="text" id="nameInput" placeholder="Ex : Léa" maxlength="18" value="${myName || ''}">
+      <div id="landingError" class="error" style="display:none;"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="createBtn">Créer une partie</button>
+        <button class="btn btn-secondary" id="joinBtn">Rejoindre</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('createBtn').onclick = onCreateRoom;
+  document.getElementById('joinBtn').onclick = renderJoinForm;
+}
+
+function renderJoinForm(){
+  const name = document.getElementById('nameInput').value.trim();
+  screenEl.innerHTML = `
+    <div class="card">
+      <label>Ton prénom</label>
+      <input type="text" id="nameInput" maxlength="18" value="${name}">
+      <label for="codeInput">Code de la partie</label>
+      <input type="text" id="codeInput" placeholder="Ex : K7QXP" maxlength="5" style="text-transform:uppercase;">
+      <div id="joinError" class="error" style="display:none;"></div>
+      <button class="btn btn-primary" id="confirmJoinBtn">Rejoindre la partie</button>
+      <button class="btn btn-secondary" id="backBtn" style="margin-top:10px;">Retour</button>
+    </div>
+  `;
+  document.getElementById('confirmJoinBtn').onclick = onJoinRoom;
+  document.getElementById('backBtn').onclick = renderLanding;
+}
+
+async function onCreateRoom(){
+  const name = document.getElementById('nameInput').value.trim();
+  const errEl = document.getElementById('landingError');
+  if(!name){ errEl.textContent = 'Entre ton prénom pour continuer.'; errEl.style.display='block'; return; }
+  myName = name;
+  const code = genCode();
+  const room = emptyRoom(code, name);
+  await saveRoom(room);
+  myRole = 'p1';
+  roomCode = code;
+  renderWaitingRoom(room);
+}
+
+async function onJoinRoom(){
+  const name = document.getElementById('nameInput').value.trim();
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const errEl = document.getElementById('joinError');
+  if(!name){ errEl.textContent = 'Entre ton prénom pour continuer.'; errEl.style.display='block'; return; }
+  if(!code){ errEl.textContent = 'Entre le code reçu de ton/ta partenaire.'; errEl.style.display='block'; return; }
+  const room = await loadRoom(code);
+  if(!room){ errEl.textContent = "Aucune partie trouvée avec ce code."; errEl.style.display='block'; return; }
+  if(room.players.p2){ errEl.textContent = "Cette partie est déjà complète."; errEl.style.display='block'; return; }
+  myName = name;
+  myRole = 'p2';
+  roomCode = code;
+  room.players.p2 = { name, word: null, guesses: [] };
+  room.status = 'words';
+  await saveRoom(room);
+  renderWordSetup(room);
+}
+
+function renderWaitingRoom(room){
+  screenEl.innerHTML = `
+    <div class="card code-display">
+      <div class="hint">Partage ce code avec ton/ta partenaire</div>
+      <div class="code">${room.code}</div>
+      <div class="copy-row" style="justify-content:center;margin-top:14px;">
+        <button class="btn btn-secondary" id="copyBtn" style="width:auto;">Copier le code</button>
+      </div>
+      <div style="margin-top:22px;color:var(--ink-soft);font-size:.9rem;">
+        <span class="waiting-pulse"></span>En attente de ton/ta partenaire…
+      </div>
+    </div>
+  `;
+  document.getElementById('copyBtn').onclick = async () => {
+    try{ await navigator.clipboard.writeText(room.code); }catch(e){}
+  };
+  startPolling(async () => {
+    const fresh = await loadRoom(roomCode);
+    if(fresh && fresh.players.p2){
+      stopPolling();
+      renderWordSetup(fresh);
+    }
+  });
+}
+
+function renderWordSetup(room){
+  stopPolling();
+  const me = room.players[myRole];
+  const already = !!me.word;
+  screenEl.innerHTML = `
+    <div class="card">
+      <h3 style="margin-bottom:6px;">Choisis ton mot secret</h3>
+      <p class="hint" style="margin-bottom:16px;">Lettres uniquement, sans accents ni espaces (3 à 15 lettres). Ton/ta partenaire ne le verra jamais affiché.</p>
+      ${already
+        ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>Mot enregistré — en attente de l'autre joueur…</div>`
+        : `<input type="text" id="wordInput" placeholder="Ex : OCEAN" maxlength="15">
+           <div id="wordError" class="error" style="display:none;"></div>
+           <button class="btn btn-primary" id="submitWordBtn">Valider mon mot</button>`
+      }
+    </div>
+  `;
+  if(!already){
+    document.getElementById('submitWordBtn').onclick = async () => {
+      const raw = document.getElementById('wordInput').value;
+      const word = normWord(raw);
+      const errEl = document.getElementById('wordError');
+      if(word.length < 3){ errEl.textContent = 'Choisis un mot de 3 lettres minimum.'; errEl.style.display='block'; return; }
+      const fresh = await loadRoom(roomCode);
+      fresh.players[myRole].word = word;
+      if(fresh.players.p1 && fresh.players.p1.word && fresh.players.p2 && fresh.players.p2.word){
+        fresh.status = 'playing';
+      }
+      await saveRoom(fresh);
+      renderWordSetup(fresh);
+    };
+  }
+  startPolling(async () => {
+    const fresh = await loadRoom(roomCode);
+    if(!fresh) return;
+    if(fresh.status === 'playing'){
+      stopPolling();
+      renderGame(fresh);
+    } else if(!fresh.players[myRole].word){
+      // still needs to redraw if nothing changed
+    } else {
+      renderWordSetup(fresh);
+    }
+  });
+}
+
+function maskedWord(word, guessLetters){
+  return word.split('').map(ch => guessLetters.includes(ch) ? ch : '_');
+}
+
+function renderGame(room){
+  stopPolling();
+  if(room.status === 'finished'){ renderEndScreen(room); return; }
+
+  const oppRole = myRole === 'p1' ? 'p2' : 'p1';
+  const me = room.players[myRole];
+  const opp = room.players[oppRole];
+  const myTurn = room.turn === myRole;
+
+  const oppMasked = maskedWord(opp.word, me.guesses);
+  const myMasked = maskedWord(me.word, opp.guesses);
+
+  screenEl.innerHTML = `
+    <div class="card">
+      <div class="players-row">
+        <div class="player-chip ${myRole}">
+          <div class="role-label">Toi</div>
+          <div class="name">${me.name}</div>
+        </div>
+        <div class="link-mid">⟷</div>
+        <div class="player-chip ${oppRole}">
+          <div class="role-label">Partenaire</div>
+          <div class="name">${opp.name}</div>
+        </div>
+      </div>
+
+      <div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">
+        ${myTurn ? "À toi de jouer — propose une lettre" : `${opp.name} réfléchit…`}
+      </div>
+
+      <div class="section-label">Le mot de ${opp.name} (ce que tu as trouvé)</div>
+      <div class="word-row theirs">
+        ${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
+      </div>
+
+      <div class="keyboard" id="keyboard">
+        ${ALPHABET.map(letter => {
+          const guessed = me.guesses.includes(letter);
+          const hit = guessed && opp.word.includes(letter);
+          const miss = guessed && !hit;
+          const disabled = !myTurn || guessed;
+          const cls = hit ? 'hit' : (miss ? 'miss' : '');
+          return `<button class="key ${cls}" data-letter="${letter}" ${disabled?'disabled':''}>${letter}</button>`;
+        }).join('')}
+      </div>
+
+      <div class="section-label">Ton mot (ce que ${opp.name} a trouvé)</div>
+      <div class="word-row mine">
+        ${myMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
+      </div>
+    </div>
+    <div class="footer-note">Partie ${room.code} · reste sur cet écran, la partie se met à jour toute seule.</div>
+  `;
+
+  if(myTurn){
+    document.querySelectorAll('#keyboard .key').forEach(btn => {
+      btn.onclick = () => onGuess(btn.getAttribute('data-letter'));
+    });
+  }
+
+  startPolling(async () => {
+    const fresh = await loadRoom(roomCode);
+    if(!fresh) return;
+    renderGame(fresh);
+  });
+}
+
+async function onGuess(letter){
+  stopPolling();
+  const fresh = await loadRoom(roomCode);
+  const oppRole = myRole === 'p1' ? 'p2' : 'p1';
+  const me = fresh.players[myRole];
+  const opp = fresh.players[oppRole];
+  if(fresh.turn !== myRole || me.guesses.includes(letter)){
+    renderGame(fresh);
+    return;
+  }
+  me.guesses.push(letter);
+
+  const oppLettersUnique = [...new Set(opp.word.split(''))];
+  const won = oppLettersUnique.every(l => me.guesses.includes(l));
+  if(won){
+    fresh.status = 'finished';
+    fresh.winner = myRole;
+  } else {
+    fresh.turn = oppRole;
+  }
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+
+function renderEndScreen(room){
+  stopPolling();
+  const iWon = room.winner === myRole;
+  const p1 = room.players.p1, p2 = room.players.p2;
+  screenEl.innerHTML = `
+    <div class="card winner-screen">
+      <div class="trophy">🏆</div>
+      <h2>${iWon ? 'Tu as gagné !' : (room.players[room.winner].name + ' a gagné !')}</h2>
+      <p class="hint">${iWon ? 'Tu as percé le mot avant ton/ta partenaire.' : 'Ce sera pour la prochaine manche.'}</p>
+      <div class="reveal-words">
+        <div><b>${p1.name}</b> : ${p1.word}</div>
+        <div><b>${p2.name}</b> : ${p2.word}</div>
+      </div>
+      <button class="btn btn-primary" id="replayBtn" style="margin-top:10px;">Rejouer avec ce couple</button>
+    </div>
+    <div class="footer-note">Partie ${room.code}</div>
+  `;
+  document.getElementById('replayBtn').onclick = async () => {
+    const fresh = await loadRoom(roomCode);
+    fresh.players.p1.word = null; fresh.players.p1.guesses = [];
+    fresh.players.p2.word = null; fresh.players.p2.guesses = [];
+    fresh.status = 'words';
+    fresh.turn = 'p1';
+    fresh.winner = null;
+    await saveRoom(fresh);
+    renderWordSetup(fresh);
+  };
+  startPolling(async () => {
+    const fresh = await loadRoom(roomCode);
+    if(fresh && fresh.status !== 'finished'){
+      stopPolling();
+      renderWordSetup(fresh);
+    }
+  });
+}
+
+renderLanding();
+</script>
+</body>
+</html>
