@@ -111,9 +111,13 @@
 
   .confetti-piece{position:fixed;top:-24px;width:8px;height:14px;opacity:.95;pointer-events:none;z-index:9999;border-radius:2px;}
   @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(105vh) rotate(420deg);opacity:.25;}}
+
+  .music-toggle{position:fixed;top:14px;right:14px;width:42px;height:42px;border-radius:50%;background:#fff;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;box-shadow:0 1px 4px rgba(43,38,48,.1);z-index:200;}
+  .music-toggle:active{transform:scale(.92);}
 </style>
 </head>
 <body>
+<button class="music-toggle" id="musicToggle" title="Musique">🔊</button>
 <div class="app" id="app">
   <div class="brand">
     <h1 id="brandTitle">Cœur Codé</h1>
@@ -726,6 +730,89 @@ function renderEndScreen(room){
     }
   });
 }
+
+/* ---------- Ambient background music (generated, no external file) ---------- */
+let musicEnabled = true;
+let audioCtx = null, masterGain = null, filterNode = null, voices = [], chordInterval = null;
+const CHORDS = [
+  [130.81,164.81,196.00,246.94], // Cmaj7
+  [110.00,130.81,164.81,196.00], // Am7
+  [87.31,110.00,130.81,164.81],  // Fmaj7
+  [98.00,123.47,146.83,174.61]   // G7
+];
+let chordIdx = 0;
+
+function ensureAudioStarted(){
+  if(!musicEnabled) return;
+  if(!audioCtx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    audioCtx = new Ctx();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  if(!masterGain) startMusicGraph();
+}
+
+function startMusicGraph(){
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.0001;
+  masterGain.gain.linearRampToValueAtTime(0.045, audioCtx.currentTime + 2.5);
+  filterNode = audioCtx.createBiquadFilter();
+  filterNode.type = 'lowpass';
+  filterNode.frequency.value = 900;
+  filterNode.connect(masterGain);
+  masterGain.connect(audioCtx.destination);
+
+  voices = [];
+  const chord = CHORDS[chordIdx];
+  chord.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+    osc.frequency.value = freq;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.5;
+    osc.connect(g);
+    g.connect(filterNode);
+    osc.start();
+    voices.push(osc);
+  });
+
+  chordInterval = setInterval(() => {
+    chordIdx = (chordIdx + 1) % CHORDS.length;
+    const nextChord = CHORDS[chordIdx];
+    voices.forEach((osc, i) => {
+      try{ osc.frequency.exponentialRampToValueAtTime(nextChord[i], audioCtx.currentTime + 3); }catch(e){}
+    });
+  }, 7000);
+}
+
+function stopMusicGraph(){
+  if(chordInterval){ clearInterval(chordInterval); chordInterval = null; }
+  const oldVoices = voices;
+  const oldGain = masterGain;
+  if(oldGain && audioCtx){
+    try{
+      oldGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      oldGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    }catch(e){}
+  }
+  setTimeout(() => {
+    oldVoices.forEach(o => { try{ o.stop(); }catch(e){} });
+    if(oldGain) oldGain.disconnect();
+  }, 650);
+  voices = [];
+  masterGain = null;
+}
+
+document.getElementById('musicToggle').onclick = () => {
+  musicEnabled = !musicEnabled;
+  document.getElementById('musicToggle').textContent = musicEnabled ? '🔊' : '🔇';
+  if(musicEnabled){ ensureAudioStarted(); } else { stopMusicGraph(); }
+};
+document.addEventListener('click', function firstGestureUnlock(){
+  ensureAudioStarted();
+  document.removeEventListener('click', firstGestureUnlock);
+}, { once: true });
 
 refreshBrand();
 renderLanding();
