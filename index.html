@@ -733,14 +733,10 @@ function renderEndScreen(room){
 
 /* ---------- Ambient background music (generated, no external file) ---------- */
 let musicEnabled = true;
-let audioCtx = null, masterGain = null, filterNode = null, voices = [], chordInterval = null;
-const CHORDS = [
-  [130.81,164.81,196.00,246.94], // Cmaj7
-  [110.00,130.81,164.81,196.00], // Am7
-  [87.31,110.00,130.81,164.81],  // Fmaj7
-  [98.00,123.47,146.83,174.61]   // G7
-];
-let chordIdx = 0;
+let audioCtx = null, masterGain = null, noteInterval = null, stepIndex = 0;
+const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C D E G A C — cheerful major pentatonic
+const MELODY_PATTERN = [0,2,4,2, 3,2,1,0, 2,4,5,4, 3,2,0,null]; // null = a little rest for breathing room
+const STEP_MS = 300;
 
 function ensureAudioStarted(){
   if(!musicEnabled) return;
@@ -753,54 +749,58 @@ function ensureAudioStarted(){
   if(!masterGain) startMusicGraph();
 }
 
+function playNote(freq, time){
+  // main soft tone
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.exponentialRampToValueAtTime(0.09, time + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.9);
+  osc.connect(g); g.connect(masterGain);
+  osc.start(time); osc.stop(time + 1.0);
+
+  // gentle shimmer one octave up, quieter — gives it a music-box sparkle
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.value = freq * 2;
+  const g2 = audioCtx.createGain();
+  g2.gain.setValueAtTime(0.0001, time);
+  g2.gain.exponentialRampToValueAtTime(0.025, time + 0.02);
+  g2.gain.exponentialRampToValueAtTime(0.0001, time + 0.7);
+  osc2.connect(g2); g2.connect(masterGain);
+  osc2.start(time); osc2.stop(time + 0.8);
+}
+
+function scheduleStep(){
+  const idx = MELODY_PATTERN[stepIndex % MELODY_PATTERN.length];
+  if(idx !== null){
+    playNote(SCALE[idx], audioCtx.currentTime + 0.02);
+  }
+  stepIndex++;
+}
+
 function startMusicGraph(){
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.0001;
-  masterGain.gain.linearRampToValueAtTime(0.045, audioCtx.currentTime + 2.5);
-  filterNode = audioCtx.createBiquadFilter();
-  filterNode.type = 'lowpass';
-  filterNode.frequency.value = 900;
-  filterNode.connect(masterGain);
+  masterGain.gain.value = 1;
   masterGain.connect(audioCtx.destination);
-
-  voices = [];
-  const chord = CHORDS[chordIdx];
-  chord.forEach((freq, i) => {
-    const osc = audioCtx.createOscillator();
-    osc.type = i % 2 === 0 ? 'sine' : 'triangle';
-    osc.frequency.value = freq;
-    const g = audioCtx.createGain();
-    g.gain.value = 0.5;
-    osc.connect(g);
-    g.connect(filterNode);
-    osc.start();
-    voices.push(osc);
-  });
-
-  chordInterval = setInterval(() => {
-    chordIdx = (chordIdx + 1) % CHORDS.length;
-    const nextChord = CHORDS[chordIdx];
-    voices.forEach((osc, i) => {
-      try{ osc.frequency.exponentialRampToValueAtTime(nextChord[i], audioCtx.currentTime + 3); }catch(e){}
-    });
-  }, 7000);
+  stepIndex = 0;
+  scheduleStep();
+  noteInterval = setInterval(scheduleStep, STEP_MS);
 }
 
 function stopMusicGraph(){
-  if(chordInterval){ clearInterval(chordInterval); chordInterval = null; }
-  const oldVoices = voices;
+  if(noteInterval){ clearInterval(noteInterval); noteInterval = null; }
   const oldGain = masterGain;
   if(oldGain && audioCtx){
     try{
       oldGain.gain.cancelScheduledValues(audioCtx.currentTime);
-      oldGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+      oldGain.gain.setValueAtTime(oldGain.gain.value, audioCtx.currentTime);
+      oldGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
     }catch(e){}
   }
-  setTimeout(() => {
-    oldVoices.forEach(o => { try{ o.stop(); }catch(e){} });
-    if(oldGain) oldGain.disconnect();
-  }, 650);
-  voices = [];
+  setTimeout(() => { if(oldGain) oldGain.disconnect(); }, 600);
   masterGain = null;
 }
 
