@@ -107,6 +107,12 @@
   .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
   .reveal-words div{background:var(--bg);border-radius:10px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1rem;}
 
+  .history-list{margin-top:8px;text-align:left;max-height:180px;overflow-y:auto;}
+  .history-item{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:7px 2px;border-bottom:1px dashed var(--line);}
+  .history-item:last-child{border-bottom:none;}
+  .history-round{color:var(--ink-soft);}
+  .history-winner{font-weight:600;}
+
   .footer-note{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:18px;line-height:1.5;}
 
   .confetti-piece{position:fixed;top:-24px;width:8px;height:14px;opacity:.95;pointer-events:none;z-index:9999;border-radius:2px;}
@@ -170,6 +176,9 @@ const T = {
     replayBtn: "Manche suivante",
     resetScoreBtn: "Remettre le score à zéro",
     scoreLabel: "Score de la série",
+    historyLabel: "Historique de la série",
+    historyRound: "Manche {round}",
+    historyWinner: "🏆 {name}",
     pauseRequestBtn: "Demander une pause",
     pausePendingSelf: "Demande de pause envoyée — en attente de {name}…",
     pausePendingOther: "{name} demande une pause",
@@ -218,6 +227,9 @@ const T = {
     replayBtn: "Next round",
     resetScoreBtn: "Reset the score",
     scoreLabel: "Series score",
+    historyLabel: "Series history",
+    historyRound: "Round {round}",
+    historyWinner: "🏆 {name}",
     pauseRequestBtn: "Request a pause",
     pausePendingSelf: "Pause request sent — waiting for {name}…",
     pausePendingOther: "{name} is requesting a pause",
@@ -268,7 +280,8 @@ function emptyRoom(code, p1name, lang, turnSeconds){
     winner: null,
     scores: { p1: 0, p2: 0 },
     round: 1,
-    pause: { status: 'none', requestedBy: null, frozenAt: null }
+    pause: { status: 'none', requestedBy: null, frozenAt: null },
+    history: []
   };
 }
 
@@ -669,6 +682,16 @@ async function onGuess(letter){
     fresh.winner = myRole;
     fresh.scores = fresh.scores || {p1:0,p2:0};
     fresh.scores[myRole] = (fresh.scores[myRole]||0) + 1;
+    fresh.history = fresh.history || [];
+    fresh.history.push({
+      round: fresh.round || 1,
+      winnerName: me.name,
+      p1Name: fresh.players.p1.name,
+      p2Name: fresh.players.p2.name,
+      p1Word: fresh.players.p1.word,
+      p2Word: fresh.players.p2.word,
+      at: Date.now()
+    });
   } else {
     fresh.turn = oppRole;
     fresh.turnStartedAt = Date.now();
@@ -684,7 +707,18 @@ function renderEndScreen(room){
   const iWon = room.winner === myRole;
   const p1 = room.players.p1, p2 = room.players.p2;
   const scores = room.scores || {p1:0,p2:0};
+  const history = room.history || [];
   setMusicMood(iWon ? 'victory' : 'defeat');
+  const historyHtml = history.length ? `
+      <div class="section-label" style="margin-top:20px;">${tr('historyLabel')}</div>
+      <div class="history-list">
+        ${history.slice().reverse().map(h => `
+          <div class="history-item">
+            <span class="history-round">${tr('historyRound',{round:h.round})}</span>
+            <span class="history-winner">${tr('historyWinner',{name:h.winnerName})}</span>
+          </div>
+        `).join('')}
+      </div>` : '';
   screenEl.innerHTML = `
     <div class="card winner-screen">
       <div class="trophy">🏆</div>
@@ -700,6 +734,7 @@ function renderEndScreen(room){
         <div class="score-sep">–</div>
         <div class="score-item"><span class="score-name">${p2.name}</span><span class="score-num">${scores.p2||0}</span></div>
       </div>
+      ${historyHtml}
       <button class="btn btn-primary" id="replayBtn" style="margin-top:16px;">${tr('replayBtn')}</button>
       <button class="btn-link" id="resetScoreBtn">${tr('resetScoreBtn')}</button>
     </div>
@@ -723,6 +758,7 @@ function renderEndScreen(room){
   document.getElementById('resetScoreBtn').onclick = async () => {
     const fresh = await loadRoom(roomCode);
     fresh.scores = {p1:0,p2:0};
+    fresh.history = [];
     await saveRoom(fresh);
     renderEndScreen(fresh);
   };
