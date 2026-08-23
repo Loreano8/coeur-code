@@ -33,122 +33,40 @@
   }
   .app{width:100%;max-width:520px;}
   h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
-  .brand{
-    text-align:center;
-    margin-bottom:28px;
-  }
+  .brand{text-align:center;margin-bottom:20px;}
   .brand h1{font-size:2.1rem;font-weight:700;letter-spacing:-0.01em;}
-  .brand .signal{
-    width:100%;
-    height:18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:10px 0 6px;
-  }
-  .signal .dash{
-    flex:1;
-    height:2px;
-    background:repeating-linear-gradient(90deg,var(--ink-soft) 0 6px, transparent 6px 12px);
-    opacity:.55;
-  }
-  .signal .dot{
-    width:9px;height:9px;border-radius:50%;
-    background:var(--gold);
-    margin:0 10px;
-    box-shadow:0 0 0 5px rgba(232,162,61,.18);
-  }
+  .brand .signal{width:100%;height:18px;display:flex;align-items:center;justify-content:center;margin:10px 0 6px;}
+  .signal .dash{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--ink-soft) 0 6px, transparent 6px 12px);opacity:.55;}
+  .signal .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);margin:0 10px;box-shadow:0 0 0 5px rgba(232,162,61,.18);}
   .brand p{color:var(--ink-soft);font-size:.92rem;margin-top:2px;}
 
-  .card{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:18px;
-    padding:26px 24px;
-    box-shadow:0 1px 2px rgba(43,38,48,.04);
-    margin-bottom:16px;
-  }
-  label{
-    display:block;
-    font-size:.82rem;
-    font-weight:600;
-    color:var(--ink-soft);
-    margin-bottom:6px;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-  }
-  input[type=text]{
-    width:100%;
-    padding:12px 14px;
-    border-radius:10px;
-    border:1.5px solid var(--line);
-    font-size:1rem;
-    font-family:'Inter',sans-serif;
-    color:var(--ink);
-    background:#fff;
-    outline:none;
-    margin-bottom:16px;
-  }
+  .lang-toggle{display:flex;justify-content:center;gap:6px;margin-bottom:16px;}
+  .lang-toggle button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .lang-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 24px;box-shadow:0 1px 2px rgba(43,38,48,.04);margin-bottom:16px;}
+  label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+  input[type=text]{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);font-size:1rem;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;margin-bottom:16px;}
   input[type=text]:focus{border-color:var(--p2);}
-  .btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    width:100%;
-    padding:13px 18px;
-    border-radius:10px;
-    border:none;
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:.98rem;
-    cursor:pointer;
-    transition:transform .12s ease, opacity .12s ease;
-  }
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 18px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:.98rem;cursor:pointer;transition:transform .12s ease, opacity .12s ease;}
   .btn:active{transform:scale(.98);}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
   .btn-primary{background:var(--ink);color:#fff;}
   .btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
   .btn-row{display:flex;gap:10px;margin-top:4px;}
   .btn-row .btn{margin:0;}
+  .btn-link{background:none;border:none;color:var(--ink-soft);font-size:.8rem;text-decoration:underline;cursor:pointer;padding:6px;width:100%;}
 
   .error{color:var(--p1);font-size:.85rem;margin:-8px 0 14px;}
   .hint{color:var(--ink-soft);font-size:.82rem;margin-top:-8px;}
 
-  .code-display{
-    text-align:center;
-    padding:18px 0 6px;
-  }
-  .code-display .code{
-    font-family:'Fraunces',serif;
-    font-size:2.4rem;
-    font-weight:700;
-    letter-spacing:.18em;
-    color:var(--p2);
-  }
-  .waiting-pulse{
-    display:inline-block;
-    width:7px;height:7px;border-radius:50%;
-    background:var(--p2);
-    animation:pulse 1.2s infinite ease-in-out;
-    margin-right:6px;
-  }
+  .code-display{text-align:center;padding:18px 0 6px;}
+  .code-display .code{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:700;letter-spacing:.18em;color:var(--p2);}
+  .waiting-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--p2);animation:pulse 1.2s infinite ease-in-out;margin-right:6px;}
   @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
 
-  .players-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:22px;
-  }
-  .player-chip{
-    flex:1;
-    background:var(--p1-soft);
-    border-radius:12px;
-    padding:10px 14px;
-    text-align:center;
-  }
+  .players-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .player-chip{flex:1;background:var(--p1-soft);border-radius:12px;padding:10px 14px;text-align:center;}
   .player-chip.p2{background:var(--p2-soft);}
   .player-chip .name{font-weight:700;font-size:.92rem;}
   .player-chip.p1 .name{color:var(--p1);}
@@ -156,109 +74,178 @@
   .player-chip .role-label{font-size:.7rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
   .link-mid{flex:0 0 auto;font-size:.75rem;color:var(--ink-soft);}
 
-  .word-row{
-    display:flex;
-    justify-content:center;
-    gap:8px;
-    flex-wrap:wrap;
-    margin:14px 0 4px;
-  }
-  .word-row .slot{
-    width:34px;height:42px;
-    border-bottom:3px solid var(--line);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Fraunces',serif;
-    font-size:1.35rem;
-    font-weight:600;
-  }
+  .score-row{display:flex;justify-content:center;align-items:baseline;gap:22px;margin:2px 0 18px;}
+  .score-row .score-item{text-align:center;}
+  .score-row .score-name{display:block;font-size:.68rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .score-row .score-num{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;}
+  .score-row .score-sep{color:var(--line);font-size:1.2rem;}
+
+  .word-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px;}
+  .word-row .slot{width:34px;height:42px;border-bottom:3px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.35rem;font-weight:600;}
   .word-row.mine .slot{border-color:var(--p1);}
   .word-row.theirs .slot{border-color:var(--p2);}
-  .section-label{
-    font-size:.78rem;
-    color:var(--ink-soft);
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    text-align:center;
-    margin-top:18px;
-    margin-bottom:2px;
-  }
+  .section-label{font-size:.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:18px;margin-bottom:2px;}
 
-  .turn-banner{
-    text-align:center;
-    padding:9px 12px;
-    border-radius:10px;
-    font-weight:600;
-    font-size:.92rem;
-    margin-bottom:16px;
-  }
+  .turn-banner{text-align:center;padding:9px 12px;border-radius:10px;font-weight:600;font-size:.92rem;margin-bottom:10px;}
   .turn-banner.mine{background:var(--p1-soft);color:var(--p1);}
   .turn-banner.theirs{background:var(--p2-soft);color:var(--p2);}
 
-  .keyboard{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:6px;
-    margin-top:16px;
-  }
-  .key{
-    padding:10px 0;
-    border-radius:8px;
-    border:1.5px solid var(--line);
-    background:#fff;
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:.88rem;
-    cursor:pointer;
-    color:var(--ink);
-  }
+  .timer-wrap{margin-bottom:16px;}
+  .timer-bar-outer{width:100%;height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
+  .timer-bar-inner{height:100%;background:var(--gold);transition:width 1s linear;}
+  .timer-text{text-align:center;font-size:.74rem;color:var(--ink-soft);margin-top:5px;}
+
+  .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;}
+  .key{padding:10px 0;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink);}
   .key:disabled{cursor:not-allowed;}
   .key.hit{background:var(--p2);border-color:var(--p2);color:#fff;}
   .key.miss{background:#F1EEF6;border-color:var(--line);color:var(--ink-soft);text-decoration:line-through;}
   .key:not(:disabled):active{transform:scale(.94);}
 
   .winner-screen{text-align:center;padding:20px 0 4px;}
-  .winner-screen .trophy{font-size:2.6rem;}
+  .winner-screen .trophy{font-size:2.6rem;display:inline-block;animation:trophyBounce 1.1s ease-in-out infinite;}
+  @keyframes trophyBounce{0%,100%{transform:translateY(0) rotate(0deg);}30%{transform:translateY(-10px) rotate(-8deg);}60%{transform:translateY(0) rotate(8deg);}}
   .winner-screen h2{font-size:1.6rem;margin-top:6px;}
-  .reveal-words{
-    display:flex;gap:12px;justify-content:center;margin:18px 0 6px;
-  }
-  .reveal-words div{
-    background:var(--bg);
-    border-radius:10px;
-    padding:10px 16px;
-    font-family:'Fraunces',serif;
-    font-size:1rem;
-  }
+  .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
+  .reveal-words div{background:var(--bg);border-radius:10px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1rem;}
 
   .footer-note{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:18px;line-height:1.5;}
-  .copy-row{display:flex;gap:8px;}
-  .copy-row .btn{flex:0 0 auto;padding:13px 16px;}
+
+  .confetti-piece{position:fixed;top:-24px;width:8px;height:14px;opacity:.95;pointer-events:none;z-index:9999;border-radius:2px;}
+  @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(105vh) rotate(420deg);opacity:.25;}}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <div class="brand">
-    <h1>Cœur Codé</h1>
+    <h1 id="brandTitle">Cœur Codé</h1>
     <div class="signal"><div class="dash"></div><div class="dot"></div><div class="dash"></div></div>
-    <p>Un mot secret chacun. Le premier qui perce le mot de l'autre a gagné.</p>
+    <p id="brandTagline"></p>
   </div>
   <div id="screen"></div>
 </div>
 
 <script>
+/* ---------- i18n ---------- */
+const T = {
+  fr: {
+    tagline: "Un mot secret chacun. Le premier qui perce le mot de l'autre a gagné.",
+    nameLabel: "Ton prénom",
+    namePlaceholder: "Ex : Léa",
+    wordLangLabel: "Langue du jeu (interface + mots)",
+    createBtn: "Créer une partie",
+    joinBtn: "Rejoindre",
+    errNeedName: "Entre ton prénom pour continuer.",
+    codeLabel: "Code de la partie",
+    codePlaceholder: "Ex : K7QXP",
+    confirmJoinBtn: "Rejoindre la partie",
+    backBtn: "Retour",
+    errNeedCode: "Entre le code reçu de ton/ta partenaire.",
+    errNoRoom: "Aucune partie trouvée avec ce code.",
+    errRoomFull: "Cette partie est déjà complète.",
+    shareHint: "Partage ce code avec ton/ta partenaire",
+    copyBtn: "Copier le code",
+    waitingPartner: "En attente de ton/ta partenaire…",
+    chooseWordTitle: "Choisis ton mot secret",
+    chooseWordHintFr: "Lettres uniquement, accents autorisés (é, è, ê, à, ç...), sans espaces. 3 à 15 lettres. Ton/ta partenaire ne le verra jamais affiché.",
+    chooseWordHintEn: "Letters only, no spaces. 3 to 15 letters. Your partner will never see it written out.",
+    wordPlaceholder: "Ex : OCEAN",
+    errWordLen: "Choisis un mot de 3 lettres minimum.",
+    submitWordBtn: "Valider mon mot",
+    wordSavedWaiting: "Mot enregistré — en attente de l'autre joueur…",
+    youLabel: "Toi",
+    partnerLabel: "Partenaire",
+    yourTurn: "À toi de jouer — propose une lettre",
+    partnerThinking: "{name} réfléchit…",
+    opponentWordLabel: "Le mot de {name} (ce que tu as trouvé)",
+    yourWordLabel: "Ton mot (ce que {name} a trouvé)",
+    footerNote: "Partie {code} · manche {round} · reste sur cet écran, la partie se met à jour toute seule.",
+    timeLeftLabel: "Temps restant sur ce tour",
+    youWon: "Tu as gagné !",
+    theyWon: "{name} a gagné !",
+    youWonSub: "Tu as percé le mot avant ton/ta partenaire.",
+    theyWonSub: "Ce sera pour la prochaine manche.",
+    replayBtn: "Manche suivante",
+    resetScoreBtn: "Remettre le score à zéro",
+    scoreLabel: "Score de la série"
+  },
+  en: {
+    tagline: "Each of you picks a secret word. First to crack the other's word wins.",
+    nameLabel: "Your first name",
+    namePlaceholder: "e.g. Emma",
+    wordLangLabel: "Game language (interface + words)",
+    createBtn: "Create a game",
+    joinBtn: "Join",
+    errNeedName: "Enter your first name to continue.",
+    codeLabel: "Game code",
+    codePlaceholder: "e.g. K7QXP",
+    confirmJoinBtn: "Join the game",
+    backBtn: "Back",
+    errNeedCode: "Enter the code your partner gave you.",
+    errNoRoom: "No game found with this code.",
+    errRoomFull: "This game already has two players.",
+    shareHint: "Share this code with your partner",
+    copyBtn: "Copy code",
+    waitingPartner: "Waiting for your partner…",
+    chooseWordTitle: "Choose your secret word",
+    chooseWordHintFr: "Letters only, accents allowed (é, è, ê, à, ç...), no spaces. 3 to 15 letters. Your partner will never see it written out.",
+    chooseWordHintEn: "Letters only, no spaces. 3 to 15 letters. Your partner will never see it written out.",
+    wordPlaceholder: "e.g. OCEAN",
+    errWordLen: "Pick a word of at least 3 letters.",
+    submitWordBtn: "Confirm my word",
+    wordSavedWaiting: "Word saved — waiting for the other player…",
+    youLabel: "You",
+    partnerLabel: "Partner",
+    yourTurn: "Your turn — suggest a letter",
+    partnerThinking: "{name} is thinking…",
+    opponentWordLabel: "{name}'s word (what you've found)",
+    yourWordLabel: "Your word (what {name} has found)",
+    footerNote: "Game {code} · round {round} · stay on this screen, it updates on its own.",
+    timeLeftLabel: "Time left this turn",
+    youWon: "You won!",
+    theyWon: "{name} won!",
+    youWonSub: "You cracked the word before your partner.",
+    theyWonSub: "Better luck next round.",
+    replayBtn: "Next round",
+    resetScoreBtn: "Reset the score",
+    scoreLabel: "Series score"
+  }
+};
+let currentLang = 'fr';
+function tr(key, vars){
+  const dict = T[currentLang] || T.fr;
+  let s = dict[key] || key;
+  if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(vars[k]); } }
+  return s;
+}
+function refreshBrand(){
+  document.getElementById('brandTagline').textContent = tr('tagline');
+}
+
 /* ---------- State ---------- */
 let myRole = null;      // 'p1' | 'p2'
 let roomCode = null;
 let myName = '';
+let selectedLang = 'fr'; // chosen at creation time
 let pollTimer = null;
+let tickTimer = null;
 
+const TURN_SECONDS = 30;
 const screenEl = document.getElementById('screen');
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const BASE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const FR_EXTRA = ['É','È','Ê','À','Ç','Ô','Î','Û','Ù'];
 
-function normWord(w){
-  return w.toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // strip accents
-    .replace(/[^A-Z]/g,'');
+function alphabetFor(lang){
+  return lang === 'fr' ? BASE_ALPHABET.concat(FR_EXTRA) : BASE_ALPHABET.slice();
+}
+
+function normWord(w, lang){
+  let up = w.toUpperCase().trim();
+  if(lang === 'fr'){
+    return up.replace(/[^A-ZÉÈÊÀÇÔÎÛÙ]/g, '');
+  }
+  up = up.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return up.replace(/[^A-Z]/g, '');
 }
 
 function genCode(){
@@ -268,21 +255,26 @@ function genCode(){
   return c;
 }
 
-function emptyRoom(code, p1name){
+function emptyRoom(code, p1name, lang){
   return {
     code,
     createdAt: Date.now(),
+    lang,
     players: {
       p1: { name: p1name, word: null, guesses: [] },
       p2: null
     },
     turn: 'p1',
-    status: 'waiting', // waiting -> words -> playing -> finished
-    winner: null
+    turnStartedAt: null,
+    status: 'waiting',
+    winner: null,
+    scores: { p1: 0, p2: 0 },
+    round: 1
   };
 }
 
-const MANTLE_NS = 'coeur-code-bj2026'; // espace de stockage dédié à ce jeu
+/* ---------- Storage (MantleDB — public, no-account JSON store) ---------- */
+const MANTLE_NS = 'coeur-code-bj2026';
 
 async function loadRoom(code){
   try{
@@ -307,26 +299,49 @@ async function saveRoom(room){
 }
 
 function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
-function startPolling(fn){
-  stopPolling();
-  pollTimer = setInterval(fn, 2200);
+function startPolling(fn){ stopPolling(); pollTimer = setInterval(fn, 2200); }
+function stopTick(){ if(tickTimer){ clearInterval(tickTimer); tickTimer=null; } }
+
+/* ---------- Confetti ---------- */
+function spawnConfetti(){
+  const colors = ['#E8546B','#1F6F78','#E8A23D','#B784E0','#5AA8D6'];
+  for(let i=0;i<60;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = (Math.random()*100) + 'vw';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.animation = `confettiFall ${2.4 + Math.random()*1.4}s linear forwards`;
+    piece.style.animationDelay = (Math.random()*0.5) + 's';
+    piece.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), 4200);
+  }
 }
 
 /* ---------- Screens ---------- */
 
 function renderLanding(){
-  stopPolling();
+  stopPolling(); stopTick();
+  currentLang = selectedLang;
+  refreshBrand();
   screenEl.innerHTML = `
+    <div class="lang-toggle">
+      <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
+      <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
+    </div>
     <div class="card">
-      <label for="nameInput">Ton prénom</label>
-      <input type="text" id="nameInput" placeholder="Ex : Léa" maxlength="18" value="${myName || ''}">
+      <label for="nameInput">${tr('nameLabel')}</label>
+      <input type="text" id="nameInput" placeholder="${tr('namePlaceholder')}" maxlength="18" value="${myName || ''}">
       <div id="landingError" class="error" style="display:none;"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" id="createBtn">Créer une partie</button>
-        <button class="btn btn-secondary" id="joinBtn">Rejoindre</button>
+        <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
+        <button class="btn btn-secondary" id="joinBtn">${tr('joinBtn')}</button>
       </div>
     </div>
   `;
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
+  });
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
 }
@@ -335,13 +350,13 @@ function renderJoinForm(){
   const name = document.getElementById('nameInput').value.trim();
   screenEl.innerHTML = `
     <div class="card">
-      <label>Ton prénom</label>
+      <label>${tr('nameLabel')}</label>
       <input type="text" id="nameInput" maxlength="18" value="${name}">
-      <label for="codeInput">Code de la partie</label>
-      <input type="text" id="codeInput" placeholder="Ex : K7QXP" maxlength="5" style="text-transform:uppercase;">
+      <label for="codeInput">${tr('codeLabel')}</label>
+      <input type="text" id="codeInput" placeholder="${tr('codePlaceholder')}" maxlength="5" style="text-transform:uppercase;">
       <div id="joinError" class="error" style="display:none;"></div>
-      <button class="btn btn-primary" id="confirmJoinBtn">Rejoindre la partie</button>
-      <button class="btn btn-secondary" id="backBtn" style="margin-top:10px;">Retour</button>
+      <button class="btn btn-primary" id="confirmJoinBtn">${tr('confirmJoinBtn')}</button>
+      <button class="btn btn-secondary" id="backBtn" style="margin-top:10px;">${tr('backBtn')}</button>
     </div>
   `;
   document.getElementById('confirmJoinBtn').onclick = onJoinRoom;
@@ -351,13 +366,15 @@ function renderJoinForm(){
 async function onCreateRoom(){
   const name = document.getElementById('nameInput').value.trim();
   const errEl = document.getElementById('landingError');
-  if(!name){ errEl.textContent = 'Entre ton prénom pour continuer.'; errEl.style.display='block'; return; }
+  if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
   myName = name;
   const code = genCode();
-  const room = emptyRoom(code, name);
+  const room = emptyRoom(code, name, selectedLang);
   await saveRoom(room);
   myRole = 'p1';
   roomCode = code;
+  currentLang = room.lang;
+  refreshBrand();
   renderWaitingRoom(room);
 }
 
@@ -365,14 +382,16 @@ async function onJoinRoom(){
   const name = document.getElementById('nameInput').value.trim();
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const errEl = document.getElementById('joinError');
-  if(!name){ errEl.textContent = 'Entre ton prénom pour continuer.'; errEl.style.display='block'; return; }
-  if(!code){ errEl.textContent = 'Entre le code reçu de ton/ta partenaire.'; errEl.style.display='block'; return; }
+  if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
+  if(!code){ errEl.textContent = tr('errNeedCode'); errEl.style.display='block'; return; }
   const room = await loadRoom(code);
-  if(!room){ errEl.textContent = "Aucune partie trouvée avec ce code."; errEl.style.display='block'; return; }
-  if(room.players.p2){ errEl.textContent = "Cette partie est déjà complète."; errEl.style.display='block'; return; }
+  if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
+  if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
   myName = name;
   myRole = 'p2';
   roomCode = code;
+  currentLang = room.lang || 'fr';
+  refreshBrand();
   room.players.p2 = { name, word: null, guesses: [] };
   room.status = 'words';
   await saveRoom(room);
@@ -382,13 +401,13 @@ async function onJoinRoom(){
 function renderWaitingRoom(room){
   screenEl.innerHTML = `
     <div class="card code-display">
-      <div class="hint">Partage ce code avec ton/ta partenaire</div>
+      <div class="hint">${tr('shareHint')}</div>
       <div class="code">${room.code}</div>
-      <div class="copy-row" style="justify-content:center;margin-top:14px;">
-        <button class="btn btn-secondary" id="copyBtn" style="width:auto;">Copier le code</button>
+      <div style="display:flex;justify-content:center;margin-top:14px;">
+        <button class="btn btn-secondary" id="copyBtn" style="width:auto;">${tr('copyBtn')}</button>
       </div>
       <div style="margin-top:22px;color:var(--ink-soft);font-size:.9rem;">
-        <span class="waiting-pulse"></span>En attente de ton/ta partenaire…
+        <span class="waiting-pulse"></span>${tr('waitingPartner')}
       </div>
     </div>
   `;
@@ -399,37 +418,43 @@ function renderWaitingRoom(room){
     const fresh = await loadRoom(roomCode);
     if(fresh && fresh.players.p2){
       stopPolling();
+      currentLang = fresh.lang || currentLang;
+      refreshBrand();
       renderWordSetup(fresh);
     }
   });
 }
 
 function renderWordSetup(room){
-  stopPolling();
+  stopPolling(); stopTick();
+  currentLang = room.lang || currentLang;
+  refreshBrand();
   const me = room.players[myRole];
   const already = !!me.word;
+  const hint = room.lang === 'fr' ? tr('chooseWordHintFr') : tr('chooseWordHintEn');
   screenEl.innerHTML = `
     <div class="card">
-      <h3 style="margin-bottom:6px;">Choisis ton mot secret</h3>
-      <p class="hint" style="margin-bottom:16px;">Lettres uniquement, sans accents ni espaces (3 à 15 lettres). Ton/ta partenaire ne le verra jamais affiché.</p>
+      <h3 style="margin-bottom:6px;">${tr('chooseWordTitle')}</h3>
+      <p class="hint" style="margin-bottom:16px;">${hint}</p>
       ${already
-        ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>Mot enregistré — en attente de l'autre joueur…</div>`
-        : `<input type="text" id="wordInput" placeholder="Ex : OCEAN" maxlength="15">
+        ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>${tr('wordSavedWaiting')}</div>`
+        : `<input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15">
            <div id="wordError" class="error" style="display:none;"></div>
-           <button class="btn btn-primary" id="submitWordBtn">Valider mon mot</button>`
+           <button class="btn btn-primary" id="submitWordBtn">${tr('submitWordBtn')}</button>`
       }
     </div>
   `;
   if(!already){
     document.getElementById('submitWordBtn').onclick = async () => {
       const raw = document.getElementById('wordInput').value;
-      const word = normWord(raw);
+      const word = normWord(raw, room.lang);
       const errEl = document.getElementById('wordError');
-      if(word.length < 3){ errEl.textContent = 'Choisis un mot de 3 lettres minimum.'; errEl.style.display='block'; return; }
+      if(word.length < 3){ errEl.textContent = tr('errWordLen'); errEl.style.display='block'; return; }
       const fresh = await loadRoom(roomCode);
       fresh.players[myRole].word = word;
       if(fresh.players.p1 && fresh.players.p1.word && fresh.players.p2 && fresh.players.p2.word){
         fresh.status = 'playing';
+        fresh.turnStartedAt = Date.now();
       }
       await saveRoom(fresh);
       renderWordSetup(fresh);
@@ -441,8 +466,6 @@ function renderWordSetup(room){
     if(fresh.status === 'playing'){
       stopPolling();
       renderGame(fresh);
-    } else if(!fresh.players[myRole].word){
-      // still needs to redraw if nothing changed
     } else {
       renderWordSetup(fresh);
     }
@@ -454,7 +477,9 @@ function maskedWord(word, guessLetters){
 }
 
 function renderGame(room){
-  stopPolling();
+  stopPolling(); stopTick();
+  currentLang = room.lang || currentLang;
+  refreshBrand();
   if(room.status === 'finished'){ renderEndScreen(room); return; }
 
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
@@ -464,32 +489,45 @@ function renderGame(room){
 
   const oppMasked = maskedWord(opp.word, me.guesses);
   const myMasked = maskedWord(me.word, opp.guesses);
+  const alphabet = alphabetFor(room.lang);
+  const scores = room.scores || {p1:0,p2:0};
 
   screenEl.innerHTML = `
     <div class="card">
       <div class="players-row">
         <div class="player-chip ${myRole}">
-          <div class="role-label">Toi</div>
+          <div class="role-label">${tr('youLabel')}</div>
           <div class="name">${me.name}</div>
         </div>
         <div class="link-mid">⟷</div>
         <div class="player-chip ${oppRole}">
-          <div class="role-label">Partenaire</div>
+          <div class="role-label">${tr('partnerLabel')}</div>
           <div class="name">${opp.name}</div>
         </div>
       </div>
 
-      <div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">
-        ${myTurn ? "À toi de jouer — propose une lettre" : `${opp.name} réfléchit…`}
+      <div class="score-row">
+        <div class="score-item"><span class="score-name">${me.name}</span><span class="score-num">${scores[myRole]||0}</span></div>
+        <div class="score-sep">–</div>
+        <div class="score-item"><span class="score-name">${opp.name}</span><span class="score-num">${scores[oppRole]||0}</span></div>
       </div>
 
-      <div class="section-label">Le mot de ${opp.name} (ce que tu as trouvé)</div>
+      <div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">
+        ${myTurn ? tr('yourTurn') : tr('partnerThinking',{name:opp.name})}
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-bar-outer"><div class="timer-bar-inner" id="timerBar" style="width:100%;"></div></div>
+        <div class="timer-text"><span id="timerText">${TURN_SECONDS}s</span> · ${tr('timeLeftLabel')}</div>
+      </div>
+
+      <div class="section-label">${tr('opponentWordLabel',{name:opp.name})}</div>
       <div class="word-row theirs">
         ${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
       </div>
 
       <div class="keyboard" id="keyboard">
-        ${ALPHABET.map(letter => {
+        ${alphabet.map(letter => {
           const guessed = me.guesses.includes(letter);
           const hit = guessed && opp.word.includes(letter);
           const miss = guessed && !hit;
@@ -499,12 +537,12 @@ function renderGame(room){
         }).join('')}
       </div>
 
-      <div class="section-label">Ton mot (ce que ${opp.name} a trouvé)</div>
+      <div class="section-label">${tr('yourWordLabel',{name:opp.name})}</div>
       <div class="word-row mine">
         ${myMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}
       </div>
     </div>
-    <div class="footer-note">Partie ${room.code} · reste sur cet écran, la partie se met à jour toute seule.</div>
+    <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
   `;
 
   if(myTurn){
@@ -513,6 +551,20 @@ function renderGame(room){
     });
   }
 
+  const turnStartedAt = room.turnStartedAt || Date.now();
+  tickTimer = setInterval(() => {
+    const elapsed = (Date.now() - turnStartedAt) / 1000;
+    const remaining = Math.max(0, Math.ceil(TURN_SECONDS - elapsed));
+    const bar = document.getElementById('timerBar');
+    const txt = document.getElementById('timerText');
+    if(bar) bar.style.width = Math.max(0,(remaining/TURN_SECONDS*100)) + '%';
+    if(txt) txt.textContent = remaining + 's';
+    if(remaining <= 0){
+      clearInterval(tickTimer); tickTimer = null;
+      if(myTurn) autoSkipTurn(turnStartedAt);
+    }
+  }, 1000);
+
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
     if(!fresh) return;
@@ -520,8 +572,23 @@ function renderGame(room){
   });
 }
 
-async function onGuess(letter){
+async function autoSkipTurn(expectedTurnStartedAt){
   stopPolling();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh || fresh.status !== 'playing') return;
+  if(fresh.turn !== myRole || fresh.turnStartedAt !== expectedTurnStartedAt){
+    renderGame(fresh);
+    return;
+  }
+  const oppRole = myRole === 'p1' ? 'p2' : 'p1';
+  fresh.turn = oppRole;
+  fresh.turnStartedAt = Date.now();
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+
+async function onGuess(letter){
+  stopPolling(); stopTick();
   const fresh = await loadRoom(roomCode);
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   const me = fresh.players[myRole];
@@ -537,40 +604,64 @@ async function onGuess(letter){
   if(won){
     fresh.status = 'finished';
     fresh.winner = myRole;
+    fresh.scores = fresh.scores || {p1:0,p2:0};
+    fresh.scores[myRole] = (fresh.scores[myRole]||0) + 1;
   } else {
     fresh.turn = oppRole;
+    fresh.turnStartedAt = Date.now();
   }
   await saveRoom(fresh);
   renderGame(fresh);
 }
 
 function renderEndScreen(room){
-  stopPolling();
+  stopPolling(); stopTick();
+  currentLang = room.lang || currentLang;
+  refreshBrand();
   const iWon = room.winner === myRole;
   const p1 = room.players.p1, p2 = room.players.p2;
+  const scores = room.scores || {p1:0,p2:0};
   screenEl.innerHTML = `
     <div class="card winner-screen">
       <div class="trophy">🏆</div>
-      <h2>${iWon ? 'Tu as gagné !' : (room.players[room.winner].name + ' a gagné !')}</h2>
-      <p class="hint">${iWon ? 'Tu as percé le mot avant ton/ta partenaire.' : 'Ce sera pour la prochaine manche.'}</p>
+      <h2>${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
+      <p class="hint">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
       <div class="reveal-words">
         <div><b>${p1.name}</b> : ${p1.word}</div>
         <div><b>${p2.name}</b> : ${p2.word}</div>
       </div>
-      <button class="btn btn-primary" id="replayBtn" style="margin-top:10px;">Rejouer avec ce couple</button>
+      <div class="section-label" style="margin-top:20px;">${tr('scoreLabel')}</div>
+      <div class="score-row">
+        <div class="score-item"><span class="score-name">${p1.name}</span><span class="score-num">${scores.p1||0}</span></div>
+        <div class="score-sep">–</div>
+        <div class="score-item"><span class="score-name">${p2.name}</span><span class="score-num">${scores.p2||0}</span></div>
+      </div>
+      <button class="btn btn-primary" id="replayBtn" style="margin-top:16px;">${tr('replayBtn')}</button>
+      <button class="btn-link" id="resetScoreBtn">${tr('resetScoreBtn')}</button>
     </div>
-    <div class="footer-note">Partie ${room.code}</div>
+    <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
   `;
+  if(iWon) spawnConfetti();
+
   document.getElementById('replayBtn').onclick = async () => {
     const fresh = await loadRoom(roomCode);
     fresh.players.p1.word = null; fresh.players.p1.guesses = [];
     fresh.players.p2.word = null; fresh.players.p2.guesses = [];
     fresh.status = 'words';
-    fresh.turn = 'p1';
+    fresh.round = (fresh.round||1) + 1;
+    fresh.turn = fresh.round % 2 === 0 ? 'p2' : 'p1';
+    fresh.turnStartedAt = null;
     fresh.winner = null;
     await saveRoom(fresh);
     renderWordSetup(fresh);
   };
+  document.getElementById('resetScoreBtn').onclick = async () => {
+    const fresh = await loadRoom(roomCode);
+    fresh.scores = {p1:0,p2:0};
+    await saveRoom(fresh);
+    renderEndScreen(fresh);
+  };
+
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
     if(fresh && fresh.status !== 'finished'){
@@ -580,6 +671,7 @@ function renderEndScreen(room){
   });
 }
 
+refreshBrand();
 renderLanding();
 </script>
 </body>
