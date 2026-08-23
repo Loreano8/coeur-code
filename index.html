@@ -153,6 +153,7 @@ const T = {
     continueBtn: "Continuer",
     greeting: "Salut {name} 👋",
     editProfileBtn: "Changer",
+    resumeSessionBtn: "↺ Reprendre la partie {code}",
     joiningAs: "Tu rejoins en tant que {name}.",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
@@ -210,6 +211,7 @@ const T = {
     continueBtn: "Continue",
     greeting: "Hi {name} 👋",
     editProfileBtn: "Change",
+    resumeSessionBtn: "↺ Resume game {code}",
     joiningAs: "Joining as {name}.",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
@@ -286,6 +288,18 @@ function getSavedName(){
 }
 function setSavedName(name){
   try{ localStorage.setItem('cc_playerName', name); }catch(e){ /* storage unavailable — just skip */ }
+}
+function saveSession(){
+  try{ localStorage.setItem('cc_session', JSON.stringify({ roomCode, myRole })); }catch(e){}
+}
+function getSavedSession(){
+  try{
+    const raw = localStorage.getItem('cc_session');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearSavedSession(){
+  try{ localStorage.removeItem('cc_session'); }catch(e){}
 }
 
 function normWord(w){
@@ -410,6 +424,7 @@ function renderLanding(){
         <span>${tr('greeting',{name:myName})}</span>
         <button class="btn-link" id="editProfileBtn" style="width:auto;">${tr('editProfileBtn')}</button>
       </div>
+      <div id="resumeSlot"></div>
       <div class="field-label">${tr('turnDurationLabel')}</div>
       <div class="toggle-row" id="durationRow">
         ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
@@ -431,6 +446,26 @@ function renderLanding(){
   document.getElementById('editProfileBtn').onclick = renderProfileSetup;
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
+  checkForResumableSession();
+}
+
+async function checkForResumableSession(){
+  const session = getSavedSession();
+  if(!session || !session.roomCode || !session.myRole) return;
+  const room = await loadRoom(session.roomCode);
+  const slot = document.getElementById('resumeSlot');
+  if(!slot) return; // user already navigated away
+  if(!room || !room.players[session.myRole]){ clearSavedSession(); return; }
+  slot.innerHTML = `<button class="btn btn-secondary" id="resumeBtn" style="margin-bottom:14px;">${tr('resumeSessionBtn',{code:session.roomCode})}</button>`;
+  document.getElementById('resumeBtn').onclick = () => {
+    myRole = session.myRole; roomCode = session.roomCode;
+    currentLang = room.lang || currentLang;
+    refreshBrand();
+    if(room.status === 'waiting') renderWaitingRoom(room);
+    else if(room.status === 'words') renderWordSetup(room);
+    else if(room.status === 'playing') renderGame(room);
+    else renderEndScreen(room);
+  };
 }
 
 function renderJoinForm(){
@@ -454,6 +489,7 @@ async function onCreateRoom(){
   const room = emptyRoom(code, myName, selectedLang, selectedTurnSeconds);
   await saveRoom(room);
   myRole = 'p1'; roomCode = code; currentLang = room.lang;
+  saveSession();
   refreshBrand();
   renderWaitingRoom(room);
 }
@@ -466,6 +502,7 @@ async function onJoinRoom(){
   if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
   if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
   myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
+  saveSession();
   refreshBrand();
   room.players.p2 = { name: myName, word: null, guesses: [] };
   room.status = 'words';
