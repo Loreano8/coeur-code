@@ -159,6 +159,15 @@ const T = {
     randomMatchHint: "Aucune messagerie — juste le jeu de mots, rien d'autre.",
     searchingLabel: "Recherche d'un·e partenaire…",
     cancelSearchBtn: "Annuler",
+    aiModeBtn: "🤖 Contre l'ordinateur",
+    aiSetupTitle: "Défie l'ordinateur",
+    aiSetupHint: "Choisis la difficulté, puis ton mot secret. L'ordinateur choisit le sien automatiquement.",
+    aiDifficultyLabel: "Difficulté",
+    aiDiff_easy: "Facile",
+    aiDiff_normal: "Normal",
+    aiDiff_hard: "Difficile",
+    aiStartBtn: "Commencer",
+    aiPlayerName: "Ordinateur",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
@@ -221,6 +230,15 @@ const T = {
     randomMatchHint: "No chat — just the word game, nothing else.",
     searchingLabel: "Looking for a partner…",
     cancelSearchBtn: "Cancel",
+    aiModeBtn: "🤖 Against the computer",
+    aiSetupTitle: "Challenge the computer",
+    aiSetupHint: "Pick a difficulty, then your secret word. The computer picks its own automatically.",
+    aiDifficultyLabel: "Difficulty",
+    aiDiff_easy: "Easy",
+    aiDiff_normal: "Normal",
+    aiDiff_hard: "Hard",
+    aiStartBtn: "Start",
+    aiPlayerName: "Computer",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
     createBtn: "Create a game",
@@ -287,9 +305,60 @@ let selectedTurnSeconds = 30;
 let pollTimer = null;
 let tickTimer = null;
 let lastSeenKey = null; // fingerprint of the last rendered room state, to avoid needless re-renders
+let aiMode = false;
+let aiDifficulty = 'normal';
+let localRoom = null;
 
 const screenEl = document.getElementById('screen');
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const AI_WORDS_FR = ['maison','jardin','soleil','nuage','musique','voyage','cuisine','lecture','fenetre','montagne','riviere','plage','foret','oiseau','poisson','fromage','gateau','chocolat','orange','citron','fraise','tomate','carotte','patate','oignon','poivron','salade','boulanger','medecin','avocat','peintre','musicien','danseur','chanteur','acteur','sportif','etudiant','voiture','bicyclette','avion','bateau','train','autobus','valise','passeport','aeroport','hotel','restaurant','cinema','theatre','bibliotheque','ecole','universite','hopital','pharmacie','banque','marche','magasin','cadeau','anniversaire','mariage','famille','amitie','amour','bonheur','tristesse','colere','surprise','courage','patience','sagesse','liberte','justice','verite','mensonge','secret','mystere','aventure','histoire','roman','poeme','chanson','danse','football','basketball','tennis','natation','cyclisme','randonnee','camping','peche','chasse','jardinage','bricolage','couture','dessin','peinture','sculpture','informatique','telephone','ordinateur','internet','television','journal','magazine','livre','cahier','crayon','ciseaux','papier','carton','plastique','metal','pierre','sable','etoile','planete','univers','galaxie'];
+const AI_WORDS_EN = ['house','garden','sunset','cloud','music','travel','kitchen','reading','window','mountain','river','beach','forest','bird','fish','cheese','cake','chocolate','orange','lemon','strawberry','tomato','carrot','potato','onion','pepper','salad','bakery','doctor','lawyer','painter','musician','dancer','singer','actor','athlete','student','bicycle','airplane','boat','train','suitcase','passport','airport','hotel','restaurant','cinema','theater','library','school','university','hospital','pharmacy','market','store','gift','birthday','wedding','family','friendship','love','happiness','sadness','anger','surprise','courage','patience','wisdom','freedom','justice','truth','secret','mystery','adventure','story','novel','poem','song','dance','football','basketball','tennis','swimming','cycling','hiking','camping','fishing','hunting','gardening','sewing','drawing','painting','sculpture','computer','phone','internet','television','newspaper','magazine','notebook','pencil','scissors','paper','cardboard','plastic','metal','stone','sand','star','planet','universe','galaxy'];
+const FR_FREQ_ORDER = ['E','A','I','S','N','T','R','U','L','O','D','C','P','M','V','G','F','B','H','Q','X','J','Y','Z','K','W'];
+const EN_FREQ_ORDER = ['E','T','A','O','I','N','S','H','R','D','L','U','C','M','F','Y','W','G','P','B','V','K','X','Q','J','Z'];
+
+function pickAIWord(lang){
+  const list = lang === 'fr' ? AI_WORDS_FR : AI_WORDS_EN;
+  return normWord(list[Math.floor(Math.random() * list.length)]);
+}
+
+function aiChooseLetter(opts){
+  const { difficulty, lang, wordLength, revealed, guessedLetters, missedLetters } = opts;
+  const remaining = ALPHABET.filter(l => !guessedLetters.includes(l));
+  if(remaining.length === 0) return null;
+
+  if(difficulty === 'easy'){
+    return remaining[Math.floor(Math.random() * remaining.length)];
+  }
+
+  if(difficulty === 'hard'){
+    const list = lang === 'fr' ? AI_WORDS_FR : AI_WORDS_EN;
+    const candidates = list.map(w => normWord(w)).filter(w => {
+      if(w.length !== wordLength) return false;
+      for(let i = 0; i < wordLength; i++){
+        if(revealed[i] !== '_' && w[i] !== revealed[i]) return false;
+      }
+      for(const m of missedLetters){ if(w.includes(m)) return false; }
+      return true;
+    });
+    if(candidates.length > 0){
+      const freq = {};
+      candidates.forEach(w => {
+        new Set(w.split('')).forEach(ch => { freq[ch] = (freq[ch] || 0) + 1; });
+      });
+      let best = null, bestScore = -1;
+      remaining.forEach(l => {
+        const score = freq[l] || 0;
+        if(score > bestScore){ bestScore = score; best = l; }
+      });
+      if(best && bestScore > 0) return best;
+    }
+  }
+
+  const order = lang === 'fr' ? FR_FREQ_ORDER : EN_FREQ_ORDER;
+  for(const l of order){ if(remaining.includes(l)) return l; }
+  return remaining[0];
+}
 
 function getSavedName(){
   try{ return localStorage.getItem('cc_playerName') || ''; }catch(e){ return ''; }
@@ -459,6 +528,7 @@ function renderLanding(){
       </div>
       <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;">${tr('randomMatchBtn')}</button>
       <p class="hint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
+      <button class="btn btn-secondary" id="aiBtn" style="margin-top:10px;">${tr('aiModeBtn')}</button>
     </div>
     <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="#" id="supportLink" style="color:inherit;">☕ Soutenir le jeu</a></div>
   `;
@@ -472,7 +542,49 @@ function renderLanding(){
   document.getElementById('createBtn').onclick = onCreateRoom;
   document.getElementById('joinBtn').onclick = renderJoinForm;
   document.getElementById('randomBtn').onclick = onRandomMatch;
+  document.getElementById('aiBtn').onclick = renderAISetup;
   checkForResumableSession();
+}
+
+function renderAISetup(){
+  stopPolling(); stopTick(); lastSeenKey = null;
+  setMusicMood('setup');
+  screenEl.innerHTML = `
+    <div class="card">
+      <h3 style="margin-bottom:6px;">${tr('aiSetupTitle')}</h3>
+      <p class="hint" style="margin-bottom:16px;">${tr('aiSetupHint')}</p>
+      <div class="field-label">${tr('aiDifficultyLabel')}</div>
+      <div class="toggle-row" id="aiDiffRow">
+        ${['easy','normal','hard'].map(d => `<button data-diff="${d}" class="${aiDifficulty===d?'active':''}">${tr('aiDiff_'+d)}</button>`).join('')}
+      </div>
+      <button class="btn btn-primary" id="startAiBtn" style="margin-top:14px;">${tr('aiStartBtn')}</button>
+      <button class="btn-secondary btn" id="aiBackBtn" style="margin-top:10px;">${tr('backBtn')}</button>
+    </div>
+  `;
+  document.querySelectorAll('#aiDiffRow button').forEach(b => {
+    b.onclick = () => { aiDifficulty = b.getAttribute('data-diff'); renderAISetup(); };
+  });
+  document.getElementById('startAiBtn').onclick = startAIGame;
+  document.getElementById('aiBackBtn').onclick = renderLanding;
+}
+
+function startAIGame(){
+  aiMode = true;
+  myRole = 'p1';
+  roomCode = 'IA';
+  localRoom = {
+    code: 'IA', lang: selectedLang, turnSeconds: selectedTurnSeconds,
+    players: {
+      p1: { name: myName, word: null, guesses: [] },
+      p2: { name: tr('aiPlayerName'), word: pickAIWord(selectedLang), guesses: [] }
+    },
+    turn: 'p1', turnStartedAt: null, status: 'words', winner: null,
+    scores: { p1: 0, p2: 0 }, round: 1,
+    pause: { status: 'none', requestedBy: null, frozenAt: null }, history: []
+  };
+  currentLang = selectedLang;
+  refreshBrand();
+  renderWordSetup(localRoom);
 }
 
 async function checkForResumableSession(){
@@ -499,6 +611,7 @@ const QUEUE_KEY = 'matchmaking-queue';
 
 async function onRandomMatch(){
   if(!myName){ renderProfileSetup(); return; }
+  aiMode = false;
   const data = await loadRaw(QUEUE_KEY);
   const now = Date.now();
   let queue = (data && Array.isArray(data.waiting)) ? data.waiting : [];
@@ -579,6 +692,7 @@ function renderJoinForm(){
 
 async function onCreateRoom(){
   if(!myName){ renderProfileSetup(); return; }
+  aiMode = false;
   const code = genCode();
   const room = emptyRoom(code, myName, selectedLang, selectedTurnSeconds);
   await saveRoom(room);
@@ -589,6 +703,7 @@ async function onCreateRoom(){
 }
 
 async function onJoinRoom(){
+  aiMode = false;
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const errEl = document.getElementById('joinError');
   if(!code){ errEl.textContent = tr('errNeedCode'); errEl.style.display='block'; return; }
@@ -657,6 +772,15 @@ function renderWordSetup(room){
       const word = normWord(raw);
       const errEl = document.getElementById('wordError');
       if(word.length < 3){ errEl.textContent = tr('errWordLen'); errEl.style.display='block'; return; }
+
+      if(aiMode){
+        localRoom.players.p1.word = word;
+        localRoom.status = 'playing';
+        localRoom.turnStartedAt = Date.now();
+        renderGame(localRoom);
+        return;
+      }
+
       const fresh = await loadRoom(roomCode);
       fresh.players[myRole].word = word;
       if(fresh.players.p1 && fresh.players.p1.word && fresh.players.p2 && fresh.players.p2.word){
@@ -667,6 +791,7 @@ function renderWordSetup(room){
       renderWordSetup(fresh);
     };
   }
+  if(aiMode) return; // no partner to wait for — nothing to poll
   // Only watch for the game actually starting — never redraw this screen otherwise,
   // so it never wipes out what the person is currently typing.
   startPolling(async () => {
@@ -702,7 +827,12 @@ function renderGame(room){
   const scores = room.scores || {p1:0,p2:0};
 
   let pauseBlockHtml = '';
-  if(pause.status === 'pending'){
+  if(aiMode){
+    if(pause.status === 'active'){
+      pauseBlockHtml = `<div class="pause-box"><p>${tr('pauseActive')}</p>
+        <button class="btn btn-primary btn-sm" id="resumeBtn" style="width:auto;">${tr('resumeBtn')}</button></div>`;
+    }
+  } else if(pause.status === 'pending'){
     if(pause.requestedBy === myRole){
       pauseBlockHtml = `<div class="pause-box"><p>${tr('pausePendingSelf',{name:opp.name})}</p></div>`;
     } else {
@@ -744,7 +874,10 @@ function renderGame(room){
         <div class="timer-text"><span id="timerText">${room.turnSeconds}s</span> · ${tr('timeLeftLabel')}</div>
       </div>` : ''}
 
-      ${showPauseRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="pauseRequestBtn">${tr('pauseRequestBtn')}</button></div>` : ''}
+      ${aiMode
+        ? (pause.status === 'none' ? `<div class="pause-link-row"><button class="btn-link" id="aiPauseToggleBtn">${tr('pauseRequestBtn')}</button></div>` : '')
+        : (showPauseRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="pauseRequestBtn">${tr('pauseRequestBtn')}</button></div>` : '')
+      }
 
       <div class="section-label">${tr('opponentWordLabel',{name:opp.name})}</div>
       <div class="word-row theirs">${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
@@ -778,7 +911,9 @@ function renderGame(room){
   const declineBtn = document.getElementById('declinePauseBtn');
   if(declineBtn) declineBtn.onclick = onResolvePause;
   const resumeBtn = document.getElementById('resumeBtn');
-  if(resumeBtn) resumeBtn.onclick = onResolvePause;
+  if(resumeBtn) resumeBtn.onclick = aiMode ? onToggleAIPause : onResolvePause;
+  const aiPauseBtn = document.getElementById('aiPauseToggleBtn');
+  if(aiPauseBtn) aiPauseBtn.onclick = onToggleAIPause;
 
   if(showTimer){
     const turnStartedAt = room.turnStartedAt || Date.now();
@@ -796,10 +931,14 @@ function renderGame(room){
       const remaining = updateTimer();
       if(remaining <= 0){
         clearInterval(tickTimer); tickTimer = null;
-        if(myTurn) autoSkipTurn(turnStartedAt);
+        if(myTurn){
+          if(aiMode) autoSkipTurnAI(turnStartedAt); else autoSkipTurn(turnStartedAt);
+        }
       }
     }, 1000);
   }
+
+  if(aiMode) return; // purely local — nothing to poll
 
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
@@ -811,6 +950,75 @@ function renderGame(room){
     }
     // otherwise: nothing changed, let the local 1s tick keep counting smoothly
   });
+}
+
+function onToggleAIPause(){
+  const room = localRoom;
+  if(room.pause.status === 'active'){
+    const frozenDuration = Date.now() - (room.pause.frozenAt || Date.now());
+    room.turnStartedAt = (room.turnStartedAt || Date.now()) + frozenDuration;
+    room.pause = { status: 'none', requestedBy: null, frozenAt: null };
+  } else {
+    room.pause = { status: 'active', requestedBy: 'p1', frozenAt: Date.now() };
+  }
+  renderGame(room);
+}
+
+async function autoSkipTurnAI(expectedTurnStartedAt){
+  const room = localRoom;
+  if(!room || room.status !== 'playing' || room.turn !== 'p1' || room.turnStartedAt !== expectedTurnStartedAt || room.pause.status !== 'none') return;
+  room.turn = 'p2';
+  room.turnStartedAt = Date.now();
+  renderGame(room);
+  setTimeout(() => aiTakeTurn(), 900 + Math.random() * 700);
+}
+
+function aiTakeTurn(){
+  const room = localRoom;
+  if(!room || room.status !== 'playing' || room.turn !== 'p2' || room.pause.status !== 'none') return;
+  const me = room.players.p1, opp = room.players.p2;
+  const revealed = maskedWord(me.word, opp.guesses);
+  const missed = opp.guesses.filter(l => !me.word.includes(l));
+  const letter = aiChooseLetter({
+    difficulty: aiDifficulty, lang: room.lang, wordLength: me.word.length,
+    revealed, guessedLetters: opp.guesses, missedLetters: missed
+  });
+  if(letter === null){ room.turn = 'p1'; room.turnStartedAt = Date.now(); renderGame(room); return; }
+  opp.guesses.push(letter);
+  const meUnique = [...new Set(me.word.split(''))];
+  const won = meUnique.every(l => opp.guesses.includes(l));
+  if(won){
+    room.status = 'finished';
+    room.winner = 'p2';
+    room.scores.p2 = (room.scores.p2 || 0) + 1;
+    room.history.push({ round: room.round || 1, winnerName: opp.name, p1Name: me.name, p2Name: opp.name, p1Word: me.word, p2Word: opp.word, at: Date.now() });
+    renderGame(room);
+    return;
+  }
+  room.turn = 'p1';
+  room.turnStartedAt = Date.now();
+  renderGame(room);
+}
+
+function onGuessAI(letter){
+  const room = localRoom;
+  const me = room.players.p1, opp = room.players.p2;
+  if(room.turn !== 'p1' || me.guesses.includes(letter) || room.pause.status !== 'none'){ renderGame(room); return; }
+  me.guesses.push(letter);
+  const oppUnique = [...new Set(opp.word.split(''))];
+  const won = oppUnique.every(l => me.guesses.includes(l));
+  if(won){
+    room.status = 'finished';
+    room.winner = 'p1';
+    room.scores.p1 = (room.scores.p1 || 0) + 1;
+    room.history.push({ round: room.round || 1, winnerName: me.name, p1Name: me.name, p2Name: opp.name, p1Word: me.word, p2Word: opp.word, at: Date.now() });
+    renderGame(room);
+    return;
+  }
+  room.turn = 'p2';
+  room.turnStartedAt = Date.now();
+  renderGame(room);
+  setTimeout(() => aiTakeTurn(), 900 + Math.random() * 700);
 }
 
 async function onRequestPause(){
@@ -856,6 +1064,7 @@ async function autoSkipTurn(expectedTurnStartedAt){
 }
 
 async function onGuess(letter){
+  if(aiMode){ stopTick(); onGuessAI(letter); return; }
   stopPolling(); stopTick();
   const fresh = await loadRoom(roomCode);
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
@@ -933,6 +1142,19 @@ function renderEndScreen(room){
   if(iWon) spawnConfetti();
 
   document.getElementById('replayBtn').onclick = async () => {
+    if(aiMode){
+      const room = localRoom;
+      room.players.p1.word = null; room.players.p1.guesses = [];
+      room.players.p2.word = null; room.players.p2.guesses = []; room.players.p2.word = pickAIWord(room.lang);
+      room.status = 'words';
+      room.round = (room.round||1) + 1;
+      room.turn = 'p1';
+      room.turnStartedAt = null;
+      room.winner = null;
+      room.pause = { status: 'none', requestedBy: null, frozenAt: null };
+      renderWordSetup(room);
+      return;
+    }
     const fresh = await loadRoom(roomCode);
     fresh.players.p1.word = null; fresh.players.p1.guesses = [];
     fresh.players.p2.word = null; fresh.players.p2.guesses = [];
@@ -946,12 +1168,20 @@ function renderEndScreen(room){
     renderWordSetup(fresh);
   };
   document.getElementById('resetScoreBtn').onclick = async () => {
+    if(aiMode){
+      localRoom.scores = {p1:0,p2:0};
+      localRoom.history = [];
+      renderEndScreen(localRoom);
+      return;
+    }
     const fresh = await loadRoom(roomCode);
     fresh.scores = {p1:0,p2:0};
     fresh.history = [];
     await saveRoom(fresh);
     renderEndScreen(fresh);
   };
+
+  if(aiMode) return; // local game — nothing to poll
 
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
