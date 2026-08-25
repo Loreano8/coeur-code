@@ -114,6 +114,8 @@
   .winner-screen h2{font-size:1.6rem;margin-top:6px;}
   .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
   .reveal-words div{background:var(--bg);border-radius:10px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1rem;}
+  .def-btn{background:none;border:none;color:var(--p2);font-size:.95rem;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;}
+  .def-box{font-family:'Inter',sans-serif;font-size:.8rem;color:var(--ink-soft);margin-top:6px;text-align:left;line-height:1.4;}
 
   .history-list{margin-top:8px;text-align:left;max-height:180px;overflow-y:auto;}
   .history-item{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:7px 2px;border-bottom:1px dashed var(--line);}
@@ -168,6 +170,9 @@ const T = {
     aiDiff_hard: "Difficile",
     aiStartBtn: "Commencer",
     aiPlayerName: "Ordinateur",
+    defBtnTitle: "Voir la définition du mot",
+    defLoading: "Recherche de la définition…",
+    defNotFound: "Pas de définition trouvée pour ce mot.",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
@@ -239,6 +244,9 @@ const T = {
     aiDiff_hard: "Hard",
     aiStartBtn: "Start",
     aiPlayerName: "Computer",
+    defBtnTitle: "See the word's definition",
+    defLoading: "Looking up the definition…",
+    defNotFound: "No definition found for this word.",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
     createBtn: "Create a game",
@@ -1099,6 +1107,24 @@ async function onGuess(letter){
   renderGame(fresh);
 }
 
+async function showDefinition(word, lang, targetId){
+  const box = document.getElementById(targetId);
+  if(!box) return;
+  box.style.display = 'block';
+  box.textContent = tr('defLoading');
+  try{
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${lang}/${encodeURIComponent(word.toLowerCase())}`);
+    if(!res.ok){ box.textContent = tr('defNotFound'); return; }
+    const data = await res.json();
+    const def = data && data[0] && data[0].meanings && data[0].meanings[0] &&
+                data[0].meanings[0].definitions && data[0].meanings[0].definitions[0] &&
+                data[0].meanings[0].definitions[0].definition;
+    box.textContent = def || tr('defNotFound');
+  }catch(e){
+    box.textContent = tr('defNotFound');
+  }
+}
+
 function renderEndScreen(room){
   stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = room.lang || currentLang;
@@ -1124,8 +1150,12 @@ function renderEndScreen(room){
       <h2>${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
       <p class="hint">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
       <div class="reveal-words">
-        <div><b>${p1.name}</b> : ${p1.word}</div>
-        <div><b>${p2.name}</b> : ${p2.word}</div>
+        <div><b>${p1.name}</b> : ${p1.word} <button class="def-btn" data-def-word="${p1.word}" data-def-target="def-p1" title="${tr('defBtnTitle')}">ⓘ</button>
+          <div class="def-box" id="def-p1" style="display:none;"></div>
+        </div>
+        <div><b>${p2.name}</b> : ${p2.word} <button class="def-btn" data-def-word="${p2.word}" data-def-target="def-p2" title="${tr('defBtnTitle')}">ⓘ</button>
+          <div class="def-box" id="def-p2" style="display:none;"></div>
+        </div>
       </div>
       <div class="section-label" style="margin-top:20px;">${tr('scoreLabel')}</div>
       <div class="score-row">
@@ -1140,6 +1170,10 @@ function renderEndScreen(room){
     <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
   `;
   if(iWon) spawnConfetti();
+
+  document.querySelectorAll('.def-btn').forEach(btn => {
+    btn.onclick = () => showDefinition(btn.getAttribute('data-def-word'), room.lang, btn.getAttribute('data-def-target'));
+  });
 
   document.getElementById('replayBtn').onclick = async () => {
     if(aiMode){
