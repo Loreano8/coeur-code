@@ -173,6 +173,7 @@ const T = {
     defBtnTitle: "Voir la définition du mot",
     defLoading: "Recherche de la définition…",
     defNotFound: "Pas de définition trouvée pour ce mot.",
+    defAccentSuggestion: "Pas de définition trouvée pour « {word} ». Vous cherchez peut-être « {guess} » :",
     turnDurationLabel: "Durée de chaque tour",
     turnDurationNone: "Pas de chrono",
     createBtn: "Créer une partie",
@@ -247,6 +248,7 @@ const T = {
     defBtnTitle: "See the word's definition",
     defLoading: "Looking up the definition…",
     defNotFound: "No definition found for this word.",
+    defAccentSuggestion: "No definition found for \"{word}\". Maybe you meant \"{guess}\":",
     turnDurationLabel: "Time per turn",
     turnDurationNone: "No timer",
     createBtn: "Create a game",
@@ -1107,22 +1109,103 @@ async function onGuess(letter){
   renderGame(fresh);
 }
 
+const ACCENT_CANDIDATES = { E:['É','È','Ê'], A:['À','Â'], I:['Î','Ï'], O:['Ô'], U:['Ù','Û','Ü'], C:['Ç'] };
+
+function generateAccentGuesses(word){
+  const positions = [];
+  for(let i = 0; i < word.length; i++){ if(ACCENT_CANDIDATES[word[i]]) positions.push(i); }
+  const guesses = [];
+  // try one accent at a time first — covers the vast majority of real words
+  for(const i of positions){
+    for(const alt of ACCENT_CANDIDATES[word[i]]){
+      guesses.push(word.slice(0, i) + alt + word.slice(i + 1));
+    }
+  }
+  // then a couple of two-accent combinations, capped so this never runs away on long words
+  if(positions.length >= 2 && positions.length <= 6){
+    outer:
+    for(let a = 0; a < positions.length; a++){
+      for(let b = a + 1; b < positions.length; b++){
+        for(const altA of ACCENT_CANDIDATES[word[positions[a]]]){
+          for(const altB of ACCENT_CANDIDATES[word[positions[b]]]){
+            let chars = word.split('');
+            chars[positions[a]] = altA; chars[positions[b]] = altB;
+            guesses.push(chars.join(''));
+            if(guesses.length >= 20) break outer; // stay polite to the free API
+          }
+        }
+      }
+    }
+  }
+  return guesses;
+}
+
+async function fetchDefinition(word, lang){
+  try{
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${lang}/${encodeURIComponent(word.toLowerCase())}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data && data[0] && data[0].meanings && data[0].meanings[0] &&
+           data[0].meanings[0].definitions && data[0].meanings[0].definitions[0] &&
+           data[0].meanings[0].definitions[0].definition || null;
+  }catch(e){ return null; }
+}
+
+function findDefinitionInObject(obj, depth){
+  if(!obj || depth > 6) return null;
+  if(Array.isArray(obj)){
+    for(const item of obj){
+      const found = findDefinitionInObject(item, depth + 1);
+      if(found) return found;
+    }
+    return null;
+  }
+  if(typeof obj === 'object'){
+    for(const key of ['definition','gloss','meaning','description']){
+      if(typeof obj[key] === 'string' && obj[key].trim().length > 2) return obj[key].trim();
+    }
+    for(const key in obj){
+      const found = findDefinitionInObject(obj[key], depth + 1);
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+async function fetchDefinitionAlt(word, lang){
+  // Second, less-certain source — different structure, unknown CORS support.
+  // Wrapped defensively: any failure here (network, CORS, unexpected shape) just returns null.
+  try{
+    const res = await fetch(`https://freedictionaryapi.com/api/v1/entries/${lang}/${encodeURIComponent(word.toLowerCase())}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    return findDefinitionInObject(data, 0);
+  }catch(e){ return null; }
+}
+
 async function showDefinition(word, lang, targetId){
   const box = document.getElementById(targetId);
   if(!box) return;
   box.style.display = 'block';
   box.textContent = tr('defLoading');
-  try{
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${lang}/${encodeURIComponent(word.toLowerCase())}`);
-    if(!res.ok){ box.textContent = tr('defNotFound'); return; }
-    const data = await res.json();
-    const def = data && data[0] && data[0].meanings && data[0].meanings[0] &&
-                data[0].meanings[0].definitions && data[0].meanings[0].definitions[0] &&
-                data[0].meanings[0].definitions[0].definition;
-    box.textContent = def || tr('defNotFound');
-  }catch(e){
-    box.textContent = tr('defNotFound');
+
+  const direct = await fetchDefinition(word, lang);
+  if(direct){ box.textContent = direct; return; }
+
+  const altDirect = await fetchDefinitionAlt(word, lang);
+  if(altDirect){ box.textContent = altDirect; return; }
+
+  if(lang === 'fr'){
+    const guesses = generateAccentGuesses(word).slice(0, 6); // capped so a burst of misses stays quick
+    for(const guess of guesses){
+      const def = await fetchDefinition(guess, lang);
+      if(def){
+        box.innerHTML = `${tr('defAccentSuggestion',{word:word.toLowerCase(), guess:guess.toLowerCase()})}<br><br>${def}`;
+        return;
+      }
+    }
   }
+  box.textContent = tr('defNotFound');
 }
 
 function renderEndScreen(room){
