@@ -530,7 +530,7 @@ function renderLanding(){
       <p class="hint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
       <button class="btn btn-secondary" id="aiBtn" style="margin-top:10px;">${tr('aiModeBtn')}</button>
     </div>
-    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="#" id="supportLink" style="color:inherit;">☕ Soutenir le jeu</a></div>
+    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="https://me.fedapay.com/coeur-code" target="_blank" rel="noopener" style="color:inherit;">☕ Soutenir le jeu</a></div>
   `;
   document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
     b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
