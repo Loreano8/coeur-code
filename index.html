@@ -1028,7 +1028,15 @@ function renderWordSetup(room){
       }
 
       const fresh = await loadRoom(roomCode);
+      if(!fresh) return; // network hiccup — leave the screen as is, nothing was persisted, retry is just clicking again
       fresh.players[myRole].word = word;
+      const oppRole = myRole === 'p1' ? 'p2' : 'p1';
+      // Re-check right before writing: the opponent may have saved their own word in the
+      // moment since we fetched `fresh` above, and we must not overwrite it with our stale copy.
+      const latest = await loadRoom(roomCode);
+      if(latest && latest.players[oppRole] && latest.players[oppRole].word && !fresh.players[oppRole].word){
+        fresh.players[oppRole].word = latest.players[oppRole].word;
+      }
       if(fresh.players.p1 && fresh.players.p1.word && fresh.players.p2 && fresh.players.p2.word){
         fresh.status = 'playing';
         fresh.turnStartedAt = Date.now();
@@ -1054,6 +1062,14 @@ function maskedWord(word, guessLetters){
 }
 
 function renderGame(room){
+  if(!room){
+    // couldn't load the room (network hiccup) — keep the current screen up and retry shortly
+    startPolling(async () => {
+      const fresh = await loadRoom(roomCode);
+      if(fresh) renderGame(fresh);
+    });
+    return;
+  }
   stopPolling(); stopTick();
   currentLang = room.lang || currentLang;
   refreshBrand();
@@ -1200,7 +1216,8 @@ function renderGame(room){
 
 function onToggleAIPause(){
   const room = localRoom;
-  if(room.pause.status === 'active'){
+  const wasActive = room.pause.status === 'active';
+  if(wasActive){
     const frozenDuration = Date.now() - (room.pause.frozenAt || Date.now());
     room.turnStartedAt = (room.turnStartedAt || Date.now()) + frozenDuration;
     room.pause = { status: 'none', requestedBy: null, frozenAt: null };
@@ -1208,6 +1225,13 @@ function onToggleAIPause(){
     room.pause = { status: 'active', requestedBy: 'p1', frozenAt: Date.now() };
   }
   renderGame(room);
+  // If we paused while it was the computer's turn, its scheduled move already fired and
+  // bailed out (pause was active) without rescheduling itself — kick it off again now.
+  // aiTakeTurn() is itself guarded (checks room.turn === 'p2'), so this is safe even if
+  // the original timeout is still pending and fires normally on its own.
+  if(wasActive && room.status === 'playing' && room.turn === 'p2'){
+    setTimeout(() => aiTakeTurn(), 500 + Math.random() * 500);
+  }
 }
 
 async function autoSkipTurnAI(expectedTurnStartedAt){
@@ -1313,6 +1337,7 @@ async function onGuess(letter){
   if(aiMode){ stopTick(); onGuessAI(letter); return; }
   stopPolling(); stopTick();
   const fresh = await loadRoom(roomCode);
+  if(!fresh){ renderGame(null); return; } // network hiccup — retry instead of crashing, this guess is simply lost
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
   const me = fresh.players[myRole];
   const opp = fresh.players[oppRole];
