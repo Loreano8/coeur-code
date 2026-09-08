@@ -219,7 +219,24 @@ const T = {
     acceptBtn: "Accepter",
     declineBtn: "Refuser",
     pauseActive: "Partie en pause",
-    resumeBtn: "Reprendre la partie"
+    resumeBtn: "Reprendre la partie",
+    categoryLabel: "Thème (facultatif)",
+    category_random: "Aléatoire",
+    category_nature: "Nature",
+    category_food: "Nourriture",
+    category_travel: "Voyage & transports",
+    category_home: "Maison & techno",
+    category_jobs: "Métiers & lieux",
+    category_sports: "Sport & loisirs",
+    category_emotions: "Émotions & récits",
+    categoryHint: "Juste une inspiration : le mot que tu choisiras n'est jamais vérifié par rapport au thème.",
+    categorySuggested: "💡 Thème suggéré : {theme}",
+    hintRequestBtn: "Demander un indice",
+    hintPendingSelf: "Demande d'indice envoyée — en attente de {name}…",
+    hintPendingOther: "{name} demande un indice sur ton mot",
+    hintPendingOtherForced: "{name} demande un indice sur ton mot — tu lui en dois un, impossible de refuser.",
+    giveHintBtn: "Donner l'indice",
+    hintDebtNotice: "💡 Tu dois un indice à {name} s'il/elle t'en demande un."
   },
   en: {
     tagline: "Each of you picks a secret word. First to crack the other's word wins.",
@@ -294,7 +311,24 @@ const T = {
     acceptBtn: "Accept",
     declineBtn: "Decline",
     pauseActive: "Game paused",
-    resumeBtn: "Resume the game"
+    resumeBtn: "Resume the game",
+    categoryLabel: "Theme (optional)",
+    category_random: "Random",
+    category_nature: "Nature",
+    category_food: "Food",
+    category_travel: "Travel & transport",
+    category_home: "Home & tech",
+    category_jobs: "Jobs & places",
+    category_sports: "Sports & hobbies",
+    category_emotions: "Emotions & stories",
+    categoryHint: "Just for inspiration — the word you pick is never checked against the theme.",
+    categorySuggested: "💡 Suggested theme: {theme}",
+    hintRequestBtn: "Ask for a hint",
+    hintPendingSelf: "Hint request sent — waiting for {name}…",
+    hintPendingOther: "{name} is asking for a hint about your word",
+    hintPendingOtherForced: "{name} is asking for a hint about your word — you owe them one, so you can't decline.",
+    giveHintBtn: "Give the hint",
+    hintDebtNotice: "💡 You owe {name} a hint if they ask for one."
   }
 };
 let currentLang = 'fr';
@@ -312,6 +346,7 @@ let roomCode = null;
 let myName = '';
 let selectedLang = 'fr';
 let selectedTurnSeconds = 30;
+let selectedCategory = 'random';
 let pollTimer = null;
 let tickTimer = null;
 let lastSeenKey = null; // fingerprint of the last rendered room state, to avoid needless re-renders
@@ -563,13 +598,27 @@ const EN_DEFINITIONS = {
 const FR_FREQ_ORDER = ['E','A','I','S','N','T','R','U','L','O','D','C','P','M','V','G','F','B','H','Q','X','J','Y','Z','K','W'];
 const EN_FREQ_ORDER = ['E','T','A','O','I','N','S','H','R','D','L','U','C','M','F','Y','W','G','P','B','V','K','X','Q','J','Z'];
 
-function pickAIWord(lang){
+/* Category tag for each word in AI_WORDS_FR / AI_WORDS_EN, by index (each language's list is
+   tagged independently — the two word lists are not a word-for-word parallel translation). */
+const WORD_CATEGORIES = ['nature','food','travel','home','jobs','sports','emotions'];
+const WORD_CATEGORY_BY_INDEX_FR = ["home","nature","nature","nature","sports","travel","food","sports","home","nature","nature","nature","nature","nature","nature","food","food","food","food","food","food","food","food","food","food","food","food","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","travel","travel","travel","travel","travel","travel","travel","travel","travel","travel","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","home","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","sports","sports","sports","sports","sports","sports","travel","travel","sports","sports","sports","sports","sports","sports","sports","sports","home","home","home","home","home","home","home","home","home","home","home","home","home","home","home","nature","nature","nature","nature","nature","nature"];
+const WORD_CATEGORY_BY_INDEX_EN = ["home","nature","nature","nature","sports","travel","food","sports","home","nature","nature","nature","nature","nature","nature","food","food","food","food","food","food","food","food","food","food","food","food","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","travel","travel","travel","travel","travel","travel","travel","travel","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","jobs","home","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","emotions","sports","sports","sports","sports","sports","sports","travel","travel","sports","sports","sports","sports","sports","sports","sports","home","home","home","home","home","home","home","home","home","home","home","home","home","nature","nature","nature","nature","nature","nature"];
+
+function wordsForCategory(lang, category){
   const list = lang === 'fr' ? AI_WORDS_FR : AI_WORDS_EN;
+  if(!category || category === 'random') return list;
+  const byIndex = lang === 'fr' ? WORD_CATEGORY_BY_INDEX_FR : WORD_CATEGORY_BY_INDEX_EN;
+  const pool = list.filter((w, i) => byIndex[i] === category);
+  return pool.length ? pool : list; // safety net, should never be empty given the mapping covers every word
+}
+
+function pickAIWord(lang, category){
+  const list = wordsForCategory(lang, category);
   return normWord(list[Math.floor(Math.random() * list.length)]);
 }
 
 function aiChooseLetter(opts){
-  const { difficulty, lang, wordLength, revealed, guessedLetters, missedLetters } = opts;
+  const { difficulty, lang, category, wordLength, revealed, guessedLetters, missedLetters } = opts;
   const remaining = ALPHABET.filter(l => !guessedLetters.includes(l));
   if(remaining.length === 0) return null;
 
@@ -578,7 +627,7 @@ function aiChooseLetter(opts){
   }
 
   if(difficulty === 'hard'){
-    const list = lang === 'fr' ? AI_WORDS_FR : AI_WORDS_EN;
+    const list = wordsForCategory(lang, category);
     const candidates = list.map(w => normWord(w)).filter(w => {
       if(w.length !== wordLength) return false;
       for(let i = 0; i < wordLength; i++){
@@ -634,9 +683,9 @@ function genCode(){
   for(let i=0;i<5;i++) c += chars[Math.floor(Math.random()*chars.length)];
   return c;
 }
-function emptyRoom(code, p1name, lang, turnSeconds){
+function emptyRoom(code, p1name, lang, turnSeconds, category){
   return {
-    code, createdAt: Date.now(), lang, turnSeconds,
+    code, createdAt: Date.now(), lang, turnSeconds, category: category || 'random',
     players: { p1: { name: p1name, word: null, guesses: [] }, p2: null },
     turn: 'p1',
     turnStartedAt: null,
@@ -645,6 +694,8 @@ function emptyRoom(code, p1name, lang, turnSeconds){
     scores: { p1: 0, p2: 0 },
     round: 1,
     pause: { status: 'none', requestedBy: null, frozenAt: null },
+    hints: { p1Debt: 0, p2Debt: 0 },
+    hintRequest: { status: 'none', requestedBy: null },
     history: []
   };
 }
@@ -691,7 +742,8 @@ function fingerprint(room){
     status: room.status, turn: room.turn, turnStartedAt: room.turnStartedAt,
     p1g: room.players.p1 && room.players.p1.guesses, p2g: room.players.p2 && room.players.p2.guesses,
     p1w: !!(room.players.p1 && room.players.p1.word), p2w: !!(room.players.p2 && room.players.p2.word),
-    pause: room.pause, scores: room.scores, round: room.round, winner: room.winner
+    pause: room.pause, hints: room.hints, hintRequest: room.hintRequest,
+    scores: room.scores, round: room.round, winner: room.winner
   });
 }
 
@@ -767,6 +819,11 @@ function renderLanding(){
       <div class="toggle-row" id="durationRow">
         ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
       </div>
+      <div class="field-label">${tr('categoryLabel')}</div>
+      <div class="toggle-row" id="categoryRow">
+        ${['random',...WORD_CATEGORIES].map(c => `<button data-cat="${c}" class="${selectedCategory===c?'active':''}">${tr('category_'+c)}</button>`).join('')}
+      </div>
+      <p class="hint" style="text-align:center;margin-top:-6px;margin-bottom:14px;">${tr('categoryHint')}</p>
       <div id="landingError" class="error" style="display:none;"></div>
       <div class="btn-row">
         <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
@@ -783,6 +840,9 @@ function renderLanding(){
   });
   document.querySelectorAll('#durationRow button').forEach(b => {
     b.onclick = () => { selectedTurnSeconds = parseInt(b.getAttribute('data-dur'),10); renderLanding(); };
+  });
+  document.querySelectorAll('#categoryRow button').forEach(b => {
+    b.onclick = () => { selectedCategory = b.getAttribute('data-cat'); renderLanding(); };
   });
   document.getElementById('editProfileBtn').onclick = renderProfileSetup;
   document.getElementById('createBtn').onclick = onCreateRoom;
@@ -803,12 +863,20 @@ function renderAISetup(){
       <div class="toggle-row" id="aiDiffRow">
         ${['easy','normal','hard'].map(d => `<button data-diff="${d}" class="${aiDifficulty===d?'active':''}">${tr('aiDiff_'+d)}</button>`).join('')}
       </div>
+      <div class="field-label">${tr('categoryLabel')}</div>
+      <div class="toggle-row" id="categoryRow">
+        ${['random',...WORD_CATEGORIES].map(c => `<button data-cat="${c}" class="${selectedCategory===c?'active':''}">${tr('category_'+c)}</button>`).join('')}
+      </div>
+      <p class="hint" style="text-align:center;margin-top:-6px;">${tr('categoryHint')}</p>
       <button class="btn btn-primary" id="startAiBtn" style="margin-top:14px;">${tr('aiStartBtn')}</button>
       <button class="btn-secondary btn" id="aiBackBtn" style="margin-top:10px;">${tr('backBtn')}</button>
     </div>
   `;
   document.querySelectorAll('#aiDiffRow button').forEach(b => {
     b.onclick = () => { aiDifficulty = b.getAttribute('data-diff'); renderAISetup(); };
+  });
+  document.querySelectorAll('#categoryRow button').forEach(b => {
+    b.onclick = () => { selectedCategory = b.getAttribute('data-cat'); renderAISetup(); };
   });
   document.getElementById('startAiBtn').onclick = startAIGame;
   document.getElementById('aiBackBtn').onclick = renderLanding;
@@ -819,14 +887,16 @@ function startAIGame(){
   myRole = 'p1';
   roomCode = 'IA';
   localRoom = {
-    code: 'IA', lang: selectedLang, turnSeconds: selectedTurnSeconds,
+    code: 'IA', lang: selectedLang, turnSeconds: selectedTurnSeconds, category: selectedCategory,
     players: {
       p1: { name: myName, word: null, guesses: [] },
-      p2: { name: tr('aiPlayerName'), word: pickAIWord(selectedLang), guesses: [] }
+      p2: { name: tr('aiPlayerName'), word: pickAIWord(selectedLang, selectedCategory), guesses: [] }
     },
     turn: 'p1', turnStartedAt: null, status: 'words', winner: null,
     scores: { p1: 0, p2: 0 }, round: 1,
-    pause: { status: 'none', requestedBy: null, frozenAt: null }, history: []
+    pause: { status: 'none', requestedBy: null, frozenAt: null },
+    hints: { p1Debt: 0, p2Debt: 0 }, hintRequest: { status: 'none', requestedBy: null },
+    history: []
   };
   currentLang = selectedLang;
   refreshBrand();
@@ -867,7 +937,7 @@ async function onRandomMatch(){
     const opponent = queue.shift();
     await saveRaw(QUEUE_KEY, { waiting: queue });
     const code = genCode();
-    const room = emptyRoom(code, opponent.name, opponent.lang || selectedLang, opponent.turnSeconds != null ? opponent.turnSeconds : selectedTurnSeconds);
+    const room = emptyRoom(code, opponent.name, opponent.lang || selectedLang, opponent.turnSeconds != null ? opponent.turnSeconds : selectedTurnSeconds, opponent.category || selectedCategory);
     room.players.p2 = { name: myName, word: null, guesses: [] };
     room.status = 'words';
     await saveRoom(room);
@@ -878,7 +948,7 @@ async function onRandomMatch(){
     renderWordSetup(room);
   } else {
     const id = genId();
-    queue.push({ id, name: myName, lang: selectedLang, turnSeconds: selectedTurnSeconds, joinedAt: now });
+    queue.push({ id, name: myName, lang: selectedLang, turnSeconds: selectedTurnSeconds, category: selectedCategory, joinedAt: now });
     await saveRaw(QUEUE_KEY, { waiting: queue });
     renderSearching(id);
   }
@@ -940,7 +1010,7 @@ async function onCreateRoom(){
   if(!myName){ renderProfileSetup(); return; }
   aiMode = false;
   const code = genCode();
-  const room = emptyRoom(code, myName, selectedLang, selectedTurnSeconds);
+  const room = emptyRoom(code, myName, selectedLang, selectedTurnSeconds, selectedCategory);
   await saveRoom(room);
   myRole = 'p1'; roomCode = code; currentLang = room.lang;
   saveSession();
@@ -1004,6 +1074,7 @@ function renderWordSetup(room){
     <div class="card">
       <h3 style="margin-bottom:6px;">${tr('chooseWordTitle')}</h3>
       <p class="hint" style="margin-bottom:16px;">${tr('chooseWordHint')}</p>
+      ${room.category && room.category !== 'random' ? `<p class="hint" style="margin-bottom:16px;">${tr('categorySuggested',{theme:tr('category_'+room.category)})}</p>` : ''}
       ${already
         ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>${tr('wordSavedWaiting')}</div>`
         : `<input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15">
@@ -1061,6 +1132,42 @@ function maskedWord(word, guessLetters){
   return word.split('').map(ch => guessLetters.includes(ch) ? ch : '_');
 }
 
+function otherRole(role){ return role === 'p1' ? 'p2' : 'p1'; }
+
+/* Reveals one random still-hidden letter of the target's word to the asker, for free
+   (no turn spent). Also settles the hint "debt": the asker now owes one back, and the
+   target — if they were themselves obligated to answer — has just repaid it. Works on
+   both a MantleDB room and the local AI-mode room, since both share the same shape. */
+function applyHint(room, askerRole){
+  const targetRole = otherRole(askerRole);
+  const asker = room.players[askerRole];
+  const target = room.players[targetRole];
+  room.hintRequest = { status: 'none', requestedBy: null };
+  const hiddenIndexes = [];
+  for(let i = 0; i < target.word.length; i++){
+    if(!asker.guesses.includes(target.word[i])) hiddenIndexes.push(i);
+  }
+  if(hiddenIndexes.length === 0) return; // nothing left to reveal
+  const letter = target.word[hiddenIndexes[Math.floor(Math.random() * hiddenIndexes.length)]];
+  asker.guesses.push(letter);
+  room.hints = room.hints || { p1Debt: 0, p2Debt: 0 };
+  room.hints[askerRole + 'Debt'] = (room.hints[askerRole + 'Debt'] || 0) + 1;
+  room.hints[targetRole + 'Debt'] = Math.max(0, (room.hints[targetRole + 'Debt'] || 0) - 1);
+  const targetUnique = [...new Set(target.word.split(''))];
+  if(targetUnique.every(l => asker.guesses.includes(l))){
+    room.status = 'finished';
+    room.winner = askerRole;
+    room.scores = room.scores || {p1:0,p2:0};
+    room.scores[askerRole] = (room.scores[askerRole]||0) + 1;
+    room.history = room.history || [];
+    room.history.push({
+      round: room.round || 1, winnerName: asker.name,
+      p1Name: room.players.p1.name, p2Name: room.players.p2.name,
+      p1Word: room.players.p1.word, p2Word: room.players.p2.word, at: Date.now()
+    });
+  }
+}
+
 function renderGame(room){
   if(!room){
     // couldn't load the room (network hiccup) — keep the current screen up and retry shortly
@@ -1082,6 +1189,8 @@ function renderGame(room){
   const opp = room.players[oppRole];
   const myTurn = room.turn === myRole;
   const pause = room.pause || {status:'none'};
+  const hints = room.hints || {p1Debt:0, p2Debt:0};
+  const hintReq = room.hintRequest || {status:'none', requestedBy:null};
   const hasTimer = !!room.turnSeconds;
 
   const oppMasked = maskedWord(opp.word, me.guesses);
@@ -1109,8 +1218,29 @@ function renderGame(room){
       <button class="btn btn-primary btn-sm" id="resumeBtn" style="width:auto;">${tr('resumeBtn')}</button></div>`;
   }
 
+  let hintBlockHtml = '';
+  if(hintReq.status === 'pending'){
+    if(hintReq.requestedBy === myRole){
+      hintBlockHtml = `<div class="pause-box"><p>${tr('hintPendingSelf',{name:opp.name})}</p></div>`;
+    } else if(!aiMode){
+      const iOwe = (hints[myRole+'Debt'] || 0) > 0;
+      hintBlockHtml = iOwe
+        ? `<div class="pause-box"><p>${tr('hintPendingOtherForced',{name:opp.name})}</p>
+            <div class="btn-row"><button class="btn btn-primary btn-sm" id="giveHintBtn">${tr('giveHintBtn')}</button></div></div>`
+        : `<div class="pause-box"><p>${tr('hintPendingOther',{name:opp.name})}</p>
+            <div class="btn-row">
+              <button class="btn btn-primary btn-sm" id="giveHintBtn">${tr('giveHintBtn')}</button>
+              <button class="btn btn-secondary btn-sm" id="declineHintBtn">${tr('declineBtn')}</button>
+            </div></div>`;
+    }
+  }
+  const owedByMe = (hints[myRole+'Debt'] || 0) > 0;
+  const hintDebtNoticeHtml = (owedByMe && hintReq.status === 'none')
+    ? `<p class="hint" style="text-align:center;margin-bottom:10px;">${tr('hintDebtNotice',{name:opp.name})}</p>` : '';
+
   const showTimer = hasTimer && pause.status === 'none';
   const showPauseRequestLink = pause.status === 'none';
+  const showHintRequestLink = pause.status === 'none' && hintReq.status === 'none';
 
   screenEl.innerHTML = `
     <div class="card">
@@ -1127,6 +1257,8 @@ function renderGame(room){
       </div>
 
       ${pauseBlockHtml}
+      ${hintBlockHtml}
+      ${hintDebtNoticeHtml}
 
       ${pause.status === 'none' ? `<div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">${myTurn ? tr('yourTurn') : tr('partnerThinking',{name:opp.name})}</div>` : ''}
 
@@ -1140,6 +1272,7 @@ function renderGame(room){
         ? (pause.status === 'none' ? `<div class="pause-link-row"><button class="btn-link" id="aiPauseToggleBtn">${tr('pauseRequestBtn')}</button></div>` : '')
         : (showPauseRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="pauseRequestBtn">${tr('pauseRequestBtn')}</button></div>` : '')
       }
+      ${showHintRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="hintRequestBtn">${tr('hintRequestBtn')}</button></div>` : ''}
 
       <div class="section-label">${tr('opponentWordLabel',{name:opp.name})}</div>
       <div class="word-row theirs">${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
@@ -1176,6 +1309,12 @@ function renderGame(room){
   if(resumeBtn) resumeBtn.onclick = aiMode ? onToggleAIPause : onResolvePause;
   const aiPauseBtn = document.getElementById('aiPauseToggleBtn');
   if(aiPauseBtn) aiPauseBtn.onclick = onToggleAIPause;
+  const hintReqBtn = document.getElementById('hintRequestBtn');
+  if(hintReqBtn) hintReqBtn.onclick = aiMode ? onRequestHintAI : onRequestHint;
+  const giveHintBtn = document.getElementById('giveHintBtn');
+  if(giveHintBtn) giveHintBtn.onclick = onGiveHint;
+  const declineHintBtn = document.getElementById('declineHintBtn');
+  if(declineHintBtn) declineHintBtn.onclick = onDeclineHint;
 
   if(showTimer){
     const turnStartedAt = room.turnStartedAt || Date.now();
@@ -1234,6 +1373,30 @@ function onToggleAIPause(){
   }
 }
 
+function onRequestHintAI(){
+  const room = localRoom;
+  if(room.status !== 'playing' || room.hintRequest.status !== 'none') return;
+  room.hintRequest = { status: 'pending', requestedBy: 'p1' };
+  renderGame(room);
+  setTimeout(() => aiResolveHintRequest(), 500 + Math.random() * 500);
+}
+
+function aiResolveHintRequest(){
+  const room = localRoom;
+  if(!room || room.hintRequest.status !== 'pending' || room.hintRequest.requestedBy !== 'p1') return;
+  const aiOwes = (room.hints.p2Debt || 0) > 0;
+  let accepts = aiOwes;
+  if(!accepts){
+    // the computer only volunteers a hint it isn't obligated to give when it's feeling generous
+    if(aiDifficulty === 'easy') accepts = true;
+    else if(aiDifficulty === 'normal') accepts = Math.random() < 0.5;
+    else accepts = false; // hard: never volunteers, only pays back what it owes
+  }
+  if(accepts) applyHint(room, 'p1');
+  else room.hintRequest = { status: 'none', requestedBy: null };
+  renderGame(room);
+}
+
 async function autoSkipTurnAI(expectedTurnStartedAt){
   const room = localRoom;
   if(!room || room.status !== 'playing' || room.turn !== 'p1' || room.turnStartedAt !== expectedTurnStartedAt || room.pause.status !== 'none') return;
@@ -1250,7 +1413,7 @@ function aiTakeTurn(){
   const revealed = maskedWord(me.word, opp.guesses);
   const missed = opp.guesses.filter(l => !me.word.includes(l));
   const letter = aiChooseLetter({
-    difficulty: aiDifficulty, lang: room.lang, wordLength: me.word.length,
+    difficulty: aiDifficulty, lang: room.lang, category: room.category, wordLength: me.word.length,
     revealed, guessedLetters: opp.guesses, missedLetters: missed
   });
   if(letter === null){ room.turn = 'p1'; room.turnStartedAt = Date.now(); renderGame(room); return; }
@@ -1315,6 +1478,38 @@ async function onResolvePause(){
   const frozenDuration = Date.now() - (fresh.pause.frozenAt || Date.now());
   fresh.turnStartedAt = (fresh.turnStartedAt || Date.now()) + frozenDuration;
   fresh.pause = { status: 'none', requestedBy: null, frozenAt: null };
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+
+async function onRequestHint(){
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh){ renderGame(null); return; }
+  fresh.hintRequest = fresh.hintRequest || { status: 'none', requestedBy: null };
+  if(fresh.status !== 'playing' || fresh.hintRequest.status !== 'none'){ renderGame(fresh); return; }
+  fresh.hintRequest = { status: 'pending', requestedBy: myRole };
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+async function onGiveHint(){
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh){ renderGame(null); return; }
+  if(!fresh.hintRequest || fresh.hintRequest.status !== 'pending'){ renderGame(fresh); return; }
+  applyHint(fresh, fresh.hintRequest.requestedBy);
+  await saveRoom(fresh);
+  renderGame(fresh);
+}
+async function onDeclineHint(){
+  stopPolling(); stopTick();
+  const fresh = await loadRoom(roomCode);
+  if(!fresh){ renderGame(null); return; }
+  const req = fresh.hintRequest;
+  if(!req || req.status !== 'pending'){ renderGame(fresh); return; }
+  const myDebt = (fresh.hints && fresh.hints[myRole + 'Debt']) || 0;
+  if(myDebt > 0){ renderGame(fresh); return; } // obligated — the UI shouldn't even offer this button in that case
+  fresh.hintRequest = { status: 'none', requestedBy: null };
   await saveRoom(fresh);
   renderGame(fresh);
 }
@@ -1532,17 +1727,20 @@ function renderEndScreen(room){
     if(aiMode){
       const room = localRoom;
       room.players.p1.word = null; room.players.p1.guesses = [];
-      room.players.p2.word = null; room.players.p2.guesses = []; room.players.p2.word = pickAIWord(room.lang);
+      room.players.p2.word = null; room.players.p2.guesses = []; room.players.p2.word = pickAIWord(room.lang, room.category);
       room.status = 'words';
       room.round = (room.round||1) + 1;
       room.turn = 'p1';
       room.turnStartedAt = null;
       room.winner = null;
       room.pause = { status: 'none', requestedBy: null, frozenAt: null };
+      room.hints = { p1Debt: 0, p2Debt: 0 };
+      room.hintRequest = { status: 'none', requestedBy: null };
       renderWordSetup(room);
       return;
     }
     const fresh = await loadRoom(roomCode);
+    if(!fresh) return; // network hiccup — nothing was persisted, the button can just be clicked again
     fresh.players.p1.word = null; fresh.players.p1.guesses = [];
     fresh.players.p2.word = null; fresh.players.p2.guesses = [];
     fresh.status = 'words';
@@ -1551,6 +1749,8 @@ function renderEndScreen(room){
     fresh.turnStartedAt = null;
     fresh.winner = null;
     fresh.pause = { status: 'none', requestedBy: null, frozenAt: null };
+    fresh.hints = { p1Debt: 0, p2Debt: 0 };
+    fresh.hintRequest = { status: 'none', requestedBy: null };
     await saveRoom(fresh);
     renderWordSetup(fresh);
   };
@@ -1562,6 +1762,7 @@ function renderEndScreen(room){
       return;
     }
     const fresh = await loadRoom(roomCode);
+    if(!fresh) return; // network hiccup — nothing was persisted, the button can just be clicked again
     fresh.scores = {p1:0,p2:0};
     fresh.history = [];
     await saveRoom(fresh);
