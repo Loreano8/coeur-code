@@ -1,0 +1,9 @@
+{
+  "appId": "com.loreano.coeurcode",
+  "appName": "Cœur Codé",
+  "webDir": "www",
+  "backgroundColor": "#F7F4FB",
+  "server": {
+    "androidScheme": "https"
+  }
+}
