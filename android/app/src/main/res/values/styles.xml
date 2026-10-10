@@ -16,7 +16,11 @@
     </style>
 
 
+    <!-- drawable/splash and splash_background have -night variants, so the
+         launch screen follows the phone's dark mode like the game does. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 </resources>

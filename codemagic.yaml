@@ -12,7 +12,7 @@ workflows:
       - name: Prepare www/ from the web game source
         script: |
           mkdir -p www
-          cp index.html manifest.json sw.js www/
+          cp index.html privacy.html manifest.json sw.js www/
           cp -r icons www/
       - name: Sync Capacitor (Android)
         script: npx cap sync android
@@ -38,7 +38,7 @@ workflows:
       - name: Prepare www/ from the web game source
         script: |
           mkdir -p www
-          cp index.html manifest.json sw.js www/
+          cp index.html privacy.html manifest.json sw.js www/
           cp -r icons www/
       - name: Sync Capacitor (iOS)
         script: npx cap sync ios
