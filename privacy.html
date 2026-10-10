@@ -6,12 +6,27 @@
 <title>Cœur Codé — Politique de confidentialité</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
+<meta name="color-scheme" content="light dark">
+<script>
+  (function(){
+    var t = null;
+    try{ t = localStorage.getItem('cc_theme'); }catch(e){}
+    if(t !== 'light' && t !== 'dark') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#F7F4FB; --surface:#FFFFFF; --ink:#2B2630; --ink-soft:#6B6475;
     --p1:#E8546B; --p2:#1F6F78; --gold:#E8A23D; --line:#E4DEEE;
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --bg:#17141C; --surface:#221E29; --ink:#F3EEF8; --ink-soft:#B5ADC2;
+    --p1:#F07085; --p2:#6FD0DA; --gold:#F0B354; --line:#3A3444;
+    color-scheme:dark;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;padding:32px 16px 60px;display:flex;justify-content:center;}
@@ -23,7 +38,7 @@
   .updated{font-size:.82rem;color:var(--ink-soft);margin-bottom:22px;}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 26px 30px;}
   a{color:var(--p2);}
-  .back{display:inline-block;margin-bottom:18px;color:var(--ink-soft);text-decoration:none;font-size:.85rem;}
+  .back{display:inline-block;padding:12px 4px;margin:-12px 0 6px -4px;color:var(--ink-soft);text-decoration:none;font-size:.85rem;}
 </style>
 </head>
 <body>

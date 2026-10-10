@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coeur-code-v3';
+const CACHE_NAME = 'coeur-code-v4';
 const SHELL_FILES = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {
