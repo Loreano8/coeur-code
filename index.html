@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cœur Codé</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2B2630">
+<meta name="theme-color" content="#F7F4FB">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,12 +21,22 @@
     --ink-soft:#6B6475;
     --p1:#E8546B;
     --p1-soft:#FBE1E6;
+    --p1-ink:#B82E4B;      /* --p1 darkened for text: 4.8:1 on --p1-soft, 5.9:1 on white */
+    --cta-a:#D23C58;       /* primary button gradient — both stops keep white text ≥ 4.5:1 */
+    --cta-b:#B85A12;
     --p2:#1F6F78;
     --p2-soft:#DCEEEF;
     --gold:#E8A23D;
     --purple:#B784E0;
     --blue:#5AA8D6;
     --line:#E4DEEE;
+    --line-strong:#8F86A0; /* input/control borders — ≥ 3:1 non-text contrast */
+    --key-off:#F1EEF6;
+    --focus:#1F6F78;
+    --dur-fast:.12s;
+    --dur-base:.2s;
+    --ease-out:cubic-bezier(.2,.9,.3,1);
+    --ease-spring:cubic-bezier(.3,1.6,.5,1);
     --safe-t:env(safe-area-inset-top,0px);
     --safe-b:env(safe-area-inset-bottom,0px);
   }
@@ -65,11 +75,38 @@
   .brand p{color:var(--ink-soft);font-size:.92rem;margin-top:2px;}
 
   .toggle-row{display:flex;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-  .toggle-row button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);transition:transform .15s ease, box-shadow .15s ease;}
-  .toggle-row button.active{background:linear-gradient(120deg,var(--p1),var(--gold));color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(232,84,107,.35);transform:translateY(-1px);}
+  .toggle-row{gap:8px;}
+  .toggle-row button{min-height:44px;padding:8px 16px;border-radius:22px;border:1.5px solid var(--line);background:var(--surface);font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--ink-soft);transition:transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-base) ease, color var(--dur-base) ease;}
+  .toggle-row button.active{background:linear-gradient(120deg,var(--cta-a),var(--cta-b));color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(210,60,88,.35);}
   .toggle-row button:active{transform:scale(.94);}
-  .field-label{text-align:center;font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .field-label{text-align:center;font-size:.75rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
   .profile-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:.95rem;font-weight:600;}
+
+  /* Visible keyboard focus on every control (mouse/touch taps don't show it) */
+  :focus{outline:none;}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:12px;}
+  .key:focus-visible{outline-offset:2px;}
+
+  .icon{width:1.15em;height:1.15em;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+  /* Game settings, tucked away so the landing leads with the main actions */
+  .settings{border:1.5px solid var(--line);border-radius:14px;margin-bottom:16px;background:var(--bg);}
+  .settings summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:48px;padding:10px 14px;cursor:pointer;font-weight:600;font-size:.9rem;}
+  .settings summary::-webkit-details-marker{display:none;}
+  .settings summary .sum-values{margin-left:auto;color:var(--ink-soft);font-weight:500;font-size:.82rem;text-align:right;}
+  .settings summary .chev{transition:transform var(--dur-base) var(--ease-out);color:var(--ink-soft);}
+  .settings[open] summary .chev{transform:rotate(180deg);}
+  .settings .settings-body{padding:4px 12px 14px;}
+
+  /* Spinner for buttons that wait on the network */
+  .btn.is-loading{pointer-events:none;}
+  .btn.is-loading::before{content:"";width:16px;height:16px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Toast for transient confirmations (copied, etc.) */
+  .toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-b));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:.9rem;font-weight:600;box-shadow:0 10px 30px -10px rgba(43,38,48,.5);z-index:300;pointer-events:none;transition:opacity var(--dur-base) ease, transform var(--dur-base) var(--ease-out);display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);}
+  .toast.show{opacity:1;transform:translate(-50%,0);}
 
   @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
   .card{
@@ -78,21 +115,27 @@
     margin-bottom:16px;animation:cardIn .38s cubic-bezier(.2,.9,.3,1.2) both;
   }
   label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
-  input[type=text]{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);font-size:1rem;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;margin-bottom:16px;transition:border-color .15s ease, box-shadow .15s ease;}
+  input[type=text]{width:100%;min-height:48px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line-strong);font-size:1rem;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;margin-bottom:16px;transition:border-color .15s ease, box-shadow .15s ease;}
   input[type=text]:focus{border-color:var(--p2);box-shadow:0 0 0 4px rgba(31,111,120,.14);}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:.98rem;cursor:pointer;transition:transform .12s cubic-bezier(.3,1.5,.6,1), opacity .12s ease, box-shadow .12s ease;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:14px 18px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:transform var(--dur-fast) var(--ease-spring), opacity var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-base) ease;}
   .btn:active{transform:scale(.96);}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
-  .btn-primary{background:linear-gradient(120deg,var(--p1),var(--gold));color:#fff;box-shadow:0 6px 16px -4px rgba(232,84,107,.45);}
-  .btn-primary:not(:disabled):hover{box-shadow:0 8px 20px -4px rgba(232,84,107,.55);transform:translateY(-1px);}
-  .btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+  .btn-primary{background:linear-gradient(120deg,var(--cta-a),var(--cta-b));color:#fff;box-shadow:0 6px 16px -4px rgba(210,60,88,.45);}
+  @media (hover:hover){
+    .btn-primary:not(:disabled):hover{box-shadow:0 8px 20px -4px rgba(210,60,88,.55);}
+    .btn-secondary:not(:disabled):hover{background:var(--bg);border-color:var(--line-strong);}
+  }
+  .btn-secondary{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);}
   .btn-row{display:flex;gap:10px;margin-top:4px;}
   .btn-row .btn{margin:0;}
-  .btn-link{background:none;border:none;color:var(--ink-soft);font-size:.8rem;text-decoration:underline;cursor:pointer;padding:6px;width:100%;}
-  .btn-sm{padding:9px 14px;font-size:.85rem;width:auto;}
+  .btn-link{background:none;border:none;color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:.88rem;font-weight:500;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:44px;padding:8px 10px;width:100%;}
+  .btn-sm{min-height:44px;padding:10px 16px;font-size:.9rem;width:auto;}
+  .btn-ghost-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+  .btn-ghost-row:empty{display:none;}
+  .btn-ghost-row .btn-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:.85rem;font-weight:600;line-height:1.2;}
 
-  .error{color:var(--p1);font-size:.85rem;margin:-8px 0 14px;font-weight:600;}
-  .hint{color:var(--ink-soft);font-size:.82rem;margin-top:-8px;}
+  .error{color:var(--p1-ink);font-size:.88rem;margin:-8px 0 14px;font-weight:600;display:flex;gap:6px;align-items:flex-start;}
+  .hint{color:var(--ink-soft);font-size:.86rem;line-height:1.5;margin-top:-8px;}
 
   .code-display{text-align:center;padding:18px 0 6px;}
   .code-display .code{font-family:'Fraunces',serif;font-size:2.6rem;font-weight:700;letter-spacing:.18em;background:linear-gradient(120deg,var(--p2),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -103,33 +146,44 @@
   .player-chip{flex:1;background:var(--p1-soft);border-radius:14px;padding:10px 14px;text-align:center;transition:transform .2s ease;}
   .player-chip.p2{background:var(--p2-soft);}
   .player-chip .name{font-weight:700;font-size:.92rem;}
-  .player-chip.p1 .name{color:var(--p1);}
+  .player-chip.p1 .name{color:var(--p1-ink);}
+  .player-chip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .player-chip{min-width:0;}
+  .player-chip.is-turn{box-shadow:0 0 0 2px currentColor inset;}
+  .player-chip.p1.is-turn{color:var(--p1);}
+  .player-chip.p2.is-turn{color:var(--p2);}
   .player-chip.p2 .name{color:var(--p2);}
-  .player-chip .role-label{font-size:.7rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .player-chip .role-label{font-size:.72rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
   .link-mid{flex:0 0 auto;font-size:.9rem;color:var(--ink-soft);}
 
   .score-row{display:flex;justify-content:center;align-items:baseline;gap:22px;margin:2px 0 18px;}
   .score-row .score-item{text-align:center;}
-  .score-row .score-name{display:block;font-size:.68rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
-  .score-row .score-num{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;animation:popIn .3s cubic-bezier(.3,1.6,.5,1) both;}
-  .score-row .score-sep{color:var(--line);font-size:1.2rem;}
+  .score-row .score-name{display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .score-row .score-num{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;}
+  .score-row .score-num.bump{animation:popIn .3s var(--ease-spring) both;}
+  .score-row .score-sep{color:var(--line-strong);font-size:1.2rem;}
   @keyframes popIn{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
 
-  .word-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px;}
+  .word-row{--n:6;--gap:6px;display:flex;justify-content:center;gap:var(--gap);flex-wrap:nowrap;margin:12px 0 4px;}
   .word-row .slot{
-    width:36px;height:44px;border-radius:10px;border:2px solid var(--line);background:#fff;
-    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;
-    transition:transform .15s ease;
+    /* shrink to fit up to 15 letters on a 320px screen, never wider than 38px */
+    width:min(38px, calc((100% - (var(--n) - 1) * var(--gap)) / var(--n)));
+    aspect-ratio:38/46;border-radius:clamp(6px,2vw,10px);border:2px solid var(--line);background:var(--surface);
+    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:clamp(.95rem,4.2vw,1.4rem);font-weight:700;
   }
+  .word-row .slot:empty::after{content:"";width:40%;height:2px;border-radius:2px;background:currentColor;opacity:.25;margin-top:45%;}
   .word-row.mine .slot{border-color:rgba(232,84,107,.35);}
   .word-row.theirs .slot{border-color:rgba(31,111,120,.35);}
-  .word-row.mine .slot:not(:empty){background:var(--p1-soft);border-color:var(--p1);color:var(--p1);animation:tilePop .28s cubic-bezier(.3,1.6,.5,1) both;}
-  .word-row.theirs .slot:not(:empty){background:var(--p2-soft);border-color:var(--p2);color:var(--p2);animation:tilePop .28s cubic-bezier(.3,1.6,.5,1) both;}
+  .word-row.mine .slot:not(:empty){background:var(--p1-soft);border-color:var(--p1);color:var(--p1-ink);}
+  .word-row.theirs .slot:not(:empty){background:var(--p2-soft);border-color:var(--p2);color:var(--p2);}
+  .word-row.mine .slot{color:var(--p1-ink);}
+  .word-row.theirs .slot{color:var(--p2);}
+  .word-row .slot.new{animation:tilePop .32s var(--ease-spring) both;}
   @keyframes tilePop{from{transform:scale(.5) rotate(-8deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
-  .section-label{font-size:.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:18px;margin-bottom:2px;}
+  .section-label{font-size:.78rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:18px;margin-bottom:2px;}
 
-  .turn-banner{text-align:center;padding:10px 12px;border-radius:12px;font-weight:700;font-size:.92rem;margin-bottom:10px;}
-  .turn-banner.mine{background:var(--p1-soft);color:var(--p1);box-shadow:0 0 0 2px rgba(232,84,107,.25);animation:turnGlow 1.8s ease-in-out infinite;}
+  .turn-banner{text-align:center;padding:12px;border-radius:12px;font-weight:700;font-size:.95rem;margin-bottom:10px;transition:background-color var(--dur-base) ease,color var(--dur-base) ease;}
+  .turn-banner.mine{background:var(--p1-soft);color:var(--p1-ink);box-shadow:0 0 0 2px rgba(232,84,107,.25);animation:turnGlow 1.8s ease-in-out infinite;}
   @keyframes turnGlow{0%,100%{box-shadow:0 0 0 2px rgba(232,84,107,.2);}50%{box-shadow:0 0 0 5px rgba(232,84,107,.35);}}
   .turn-banner.theirs{background:var(--p2-soft);color:var(--p2);}
   .turn-banner.pause{background:#FFF3DC;color:#8A6416;}
@@ -137,23 +191,31 @@
   .timer-wrap{margin-bottom:10px;}
   .timer-bar-outer{width:100%;height:7px;background:var(--line);border-radius:6px;overflow:hidden;}
   .timer-bar-inner{height:100%;background:linear-gradient(90deg,var(--gold),var(--p1));transition:width 1s linear;}
-  .timer-text{text-align:center;font-size:.74rem;color:var(--ink-soft);margin-top:5px;}
+  .timer-text{text-align:center;font-size:.8rem;color:var(--ink-soft);margin-top:6px;font-variant-numeric:tabular-nums;}
+  .timer-wrap.low .timer-bar-inner{background:var(--p1);}
+  .timer-wrap.low .timer-text{color:var(--p1-ink);font-weight:700;}
+  .timer-wrap.low .timer-bar-outer{animation:lowPulse .8s ease-in-out infinite;}
+  @keyframes lowPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,84,107,0);}50%{box-shadow:0 0 0 4px rgba(232,84,107,.25);}}
 
   .pause-box{background:#FFF9EE;border:1px solid #F0DCA8;border-radius:14px;padding:14px;text-align:center;margin-bottom:16px;}
   .pause-box p{margin:0 0 10px;font-size:.88rem;color:#8A6416;font-weight:600;}
   .pause-box .btn-row{gap:8px;}
   .pause-link-row{text-align:center;margin-bottom:14px;}
 
-  .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:16px;}
+  .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;transition:opacity var(--dur-base) ease;}
+  .keyboard.locked .key:not(.hit):not(.miss){opacity:.5;box-shadow:0 1px 0 var(--line);}
   .key{
-    padding:11px 0;border-radius:9px;border:none;background:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:.88rem;
+    min-height:48px;padding:0;border-radius:10px;border:none;background:var(--surface);font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;
     cursor:pointer;color:var(--ink);box-shadow:0 3px 0 var(--line), 0 3px 6px rgba(43,38,48,.06);
     transition:transform .1s ease, box-shadow .1s ease;
   }
   .key:disabled{cursor:not-allowed;}
-  .key.hit{background:var(--p2);color:#fff;box-shadow:0 3px 0 #124851;animation:keyHit .35s ease;}
+  .key.hit{background:var(--p2);color:#fff;box-shadow:0 3px 0 #124851;}
+  .key.hit.new{animation:keyHit .35s ease;}
   @keyframes keyHit{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
-  .key.miss{background:#F1EEF6;color:var(--ink-soft);text-decoration:line-through;box-shadow:0 3px 0 var(--line);animation:keyMiss .3s ease;}
+  .key.miss{background:var(--key-off);color:var(--ink-soft);text-decoration:line-through;box-shadow:0 3px 0 var(--line);}
+  .key.miss.new{animation:keyMiss .3s ease;}
+  .key.pending{background:var(--gold);color:#fff;box-shadow:0 1px 0 #B07420;transform:translateY(2px);}
   @keyframes keyMiss{0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
   .key:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 var(--line);}
 
@@ -162,24 +224,28 @@
   @keyframes trophyBounce{0%,100%{transform:translateY(0) rotate(0deg);}30%{transform:translateY(-10px) rotate(-8deg);}60%{transform:translateY(0) rotate(8deg);}}
   .winner-screen h2{font-size:1.7rem;margin-top:6px;animation:popIn .4s cubic-bezier(.3,1.6,.5,1) both;}
   .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
-  .reveal-words div{background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;}
-  .def-btn{background:none;border:none;color:var(--p2);font-size:.95rem;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;}
-  .def-box{font-family:'Inter',sans-serif;font-size:.8rem;color:var(--ink-soft);margin-top:6px;text-align:left;line-height:1.4;}
+  .reveal-words > div{background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;max-width:100%;overflow-wrap:anywhere;}
+  .def-btn{background:none;border:none;color:var(--p2);font-size:1rem;cursor:pointer;width:44px;height:44px;margin:-10px -10px -10px 0;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;border-radius:50%;}
+  .reveal-head{display:flex;align-items:center;justify-content:center;gap:2px;}
+  .reveal-head span{min-width:0;}
+  .def-btn[aria-expanded=true]{background:var(--p2-soft);}
+  .def-box{font-family:'Inter',sans-serif;font-size:.85rem;font-weight:400;color:var(--ink-soft);margin-top:6px;text-align:left;line-height:1.4;}
 
   .history-list{margin-top:8px;text-align:left;max-height:180px;overflow-y:auto;}
-  .history-item{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:7px 2px;border-bottom:1px dashed var(--line);}
+  .history-item{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;padding:7px 2px;border-bottom:1px dashed var(--line);}
   .history-item:last-child{border-bottom:none;}
   .history-round{color:var(--ink-soft);}
   .history-winner{font-weight:600;}
 
-  .footer-note{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:18px;line-height:1.5;}
+  .footer-note{text-align:center;color:var(--ink-soft);font-size:.8rem;margin-top:18px;line-height:1.5;}
+  .footer-note a{color:inherit;display:inline-block;padding:10px 4px;}
 
   .confetti-piece{position:fixed;top:-24px;width:8px;height:14px;opacity:.95;pointer-events:none;z-index:9999;border-radius:2px;}
   @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(105vh) rotate(420deg);opacity:.25;}}
 
   .music-toggle{
     position:fixed;top:calc(14px + var(--safe-t));right:14px;width:44px;height:44px;border-radius:50%;background:#fff;
-    border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;
+    border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;color:var(--ink);
     box-shadow:0 4px 12px rgba(43,38,48,.12);z-index:200;transition:transform .15s cubic-bezier(.3,1.6,.5,1);
   }
   .music-toggle:active{transform:scale(.88) rotate(-12deg);}
@@ -196,23 +262,41 @@
 
   .confetti-piece.confetti-heart{width:auto;height:auto;background:none;line-height:1;}
 
-  .btn-primary{animation:btnGlow 3.4s ease-in-out infinite;}
+  /* Only the main call-to-action of a screen breathes, not every primary button */
+  .btn-primary.cta-glow{animation:btnGlow 3.4s ease-in-out infinite;}
   @keyframes btnGlow{
-    0%,100%{box-shadow:0 6px 16px -4px rgba(232,84,107,.45);}
-    50%{box-shadow:0 9px 22px -3px rgba(232,84,107,.62);}
+    0%,100%{box-shadow:0 6px 16px -4px rgba(210,60,88,.45);}
+    50%{box-shadow:0 9px 22px -3px rgba(210,60,88,.62);}
+  }
+
+  /* Re-renders of the same screen (polling, taps) shouldn't replay entrance animations */
+  #screen.static .card{animation:none;}
+
+  @media (max-width:380px){
+    body{padding-left:12px;padding-right:12px;}
+    .card{padding:22px 16px;}
+    .keyboard{gap:5px;}
+    .brand h1{font-size:2rem;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
+    .bg-hearts,.confetti-piece{display:none !important;}
   }
 </style>
 </head>
 <body>
 <div class="bg-hearts" id="bgHearts" aria-hidden="true"></div>
-<button class="music-toggle" id="musicToggle" title="Musique">🔊</button>
+<button class="music-toggle" id="musicToggle" type="button" aria-pressed="true"></button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr-only" id="srLive" aria-live="polite" aria-atomic="true"></div>
 <div class="app" id="app" style="position:relative;z-index:1;">
   <div class="brand">
     <h1 id="brandTitle">Cœur Codé</h1>
-    <div class="signal"><div class="dash"></div><div class="dot"></div><div class="dash"></div></div>
+    <div class="signal" aria-hidden="true"><div class="dash"></div><div class="dot"></div><div class="dash"></div></div>
     <p id="brandTagline"></p>
   </div>
-  <div id="screen"></div>
+  <main id="screen"></main>
 </div>
 
 <script>
@@ -227,13 +311,26 @@ const T = {
     continueBtn: "Continuer",
     greeting: "Salut {name} 👋",
     editProfileBtn: "Changer",
-    resumeSessionBtn: "↺ Reprendre la partie {code}",
+    resumeSessionBtn: "Reprendre la partie {code}",
     joiningAs: "Tu rejoins en tant que {name}.",
-    randomMatchBtn: "🎲 Partie surprise (avec un·e inconnu·e)",
+    randomMatchBtn: "Partie surprise (avec un·e inconnu·e)",
     randomMatchHint: "Aucune messagerie — juste le jeu de mots, rien d'autre.",
     searchingLabel: "Recherche d'un·e partenaire…",
     cancelSearchBtn: "Annuler",
-    aiModeBtn: "🤖 Contre l'ordinateur",
+    aiModeBtn: "Contre l'ordinateur",
+    settingsLabel: "Réglages de la partie",
+    copiedToast: "Code copié !",
+    copyFailedToast: "Copie impossible — note le code à la main.",
+    shareBtn: "Partager",
+    shareText: "Rejoins-moi sur Cœur Codé ! Code de la partie : {code}",
+    privacyLink: "Politique de confidentialité",
+    supportLink: "Soutenir le jeu",
+    musicOn: "Couper la musique",
+    musicOff: "Activer la musique",
+    keyboardHelp: "Astuce : tu peux aussi taper les lettres au clavier.",
+    letterHit: "{letter} : bien joué, la lettre est dans le mot !",
+    letterMiss: "{letter} : pas dans le mot.",
+    secondsLeft: "{s} secondes restantes",
     aiSetupTitle: "Défie l'ordinateur",
     aiSetupHint: "Choisis la difficulté, puis ton mot secret. L'ordinateur choisit le sien automatiquement.",
     aiDifficultyLabel: "Difficulté",
@@ -319,13 +416,26 @@ const T = {
     continueBtn: "Continue",
     greeting: "Hi {name} 👋",
     editProfileBtn: "Change",
-    resumeSessionBtn: "↺ Resume game {code}",
+    resumeSessionBtn: "Resume game {code}",
     joiningAs: "Joining as {name}.",
-    randomMatchBtn: "🎲 Surprise match (with a stranger)",
+    randomMatchBtn: "Surprise match (with a stranger)",
     randomMatchHint: "No chat — just the word game, nothing else.",
     searchingLabel: "Looking for a partner…",
     cancelSearchBtn: "Cancel",
-    aiModeBtn: "🤖 Against the computer",
+    aiModeBtn: "Against the computer",
+    settingsLabel: "Game settings",
+    copiedToast: "Code copied!",
+    copyFailedToast: "Couldn't copy — write the code down instead.",
+    shareBtn: "Share",
+    shareText: "Join me on Cœur Codé! Game code: {code}",
+    privacyLink: "Privacy policy",
+    supportLink: "Support the game",
+    musicOn: "Turn music off",
+    musicOff: "Turn music on",
+    keyboardHelp: "Tip: you can also type letters on your keyboard.",
+    letterHit: "{letter}: nice, it's in the word!",
+    letterMiss: "{letter}: not in the word.",
+    secondsLeft: "{s} seconds left",
     aiSetupTitle: "Challenge the computer",
     aiSetupHint: "Pick a difficulty, then your secret word. The computer picks its own automatically.",
     aiDifficultyLabel: "Difficulty",
@@ -407,10 +517,98 @@ let currentLang = 'fr';
 function tr(key, vars){
   const dict = T[currentLang] || T.fr;
   let s = dict[key] || key;
-  if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(vars[k]); } }
+  if(vars){ for(const k in vars){ s = s.split('{'+k+'}').join(esc(vars[k])); } }
   return s;
 }
-function refreshBrand(){ document.getElementById('brandTagline').textContent = tr('tagline'); }
+function esc(v){
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- UI helpers ---------- */
+// Lucide-style line icons, so controls don't depend on emoji fonts
+const ICON_PATHS = {
+  volume: '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
+  mute: '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6"/><path d="m17 9 6 6"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  dice: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
+  bot: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><path d="M9 13v1"/><path d="M15 13v1"/><path d="M2 14h2"/><path d="M20 14h2"/>',
+  resume: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/>',
+  settings: '<path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
+  pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+  arrows: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>'
+};
+function icon(name, cls){
+  return `<svg class="icon ${cls||''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name]||''}</svg>`;
+}
+
+// Swap the screen's markup; entrance animations only play when the screen actually changes.
+let currentScreenName = null;
+function setScreen(name, html){
+  screenEl.classList.toggle('static', name === currentScreenName);
+  currentScreenName = name;
+  screenEl.innerHTML = html;
+}
+
+// Disable a button and show a spinner while an async action runs (prevents double submits).
+async function withLoading(btn, fn){
+  if(!btn || btn.classList.contains('is-loading')) return;
+  btn.classList.add('is-loading'); btn.disabled = true; btn.setAttribute('aria-busy','true');
+  try{ await fn(); }
+  finally{
+    if(btn.isConnected){ btn.classList.remove('is-loading'); btn.disabled = false; btn.removeAttribute('aria-busy'); }
+  }
+}
+
+let toastTimer = null;
+function showToast(msg, iconName){
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.innerHTML = (iconName ? icon(iconName) : '') + `<span>${esc(msg)}</span>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function showError(el, msg){
+  el.innerHTML = icon('alert') + `<span>${esc(msg)}</span>`;
+  el.style.display = 'flex';
+}
+
+function buzz(pattern){
+  try{ if(navigator.vibrate && !matchMedia('(prefers-reduced-motion: reduce)').matches) navigator.vibrate(pattern); }catch(e){}
+}
+
+// Enter in a text field triggers the screen's main button.
+function submitOnEnter(inputId, btnId){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); const b = document.getElementById(btnId); if(b && !b.disabled) b.click(); }
+  });
+}
+
+// Mark toggle-row buttons as pressed in place, instead of re-rendering the whole screen.
+function bindChoiceRow(rowSel, attr, onPick){
+  const btns = document.querySelectorAll(rowSel + ' button');
+  btns.forEach(b => {
+    b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+    b.onclick = () => {
+      btns.forEach(o => { o.classList.toggle('active', o === b); o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      onPick(b.getAttribute(attr));
+    };
+  });
+}
+function refreshBrand(){
+  document.getElementById('brandTagline').textContent = tr('tagline');
+  document.documentElement.lang = currentLang;
+  if(typeof paintMusicToggle === 'function' && document.getElementById('musicToggle').innerHTML) paintMusicToggle();
+}
 
 /* ---------- State ---------- */
 let myRole = null;
@@ -866,32 +1064,56 @@ function spawnConfetti(){
 }
 
 /* ---------- Screens ---------- */
+function langToggleHtml(){
+  return `<div class="toggle-row" role="group" aria-label="Langue / Language">
+      <button data-lang="fr" lang="fr" class="${selectedLang==='fr'?'active':''}" aria-pressed="${selectedLang==='fr'}">Français</button>
+      <button data-lang="en" lang="en" class="${selectedLang==='en'?'active':''}" aria-pressed="${selectedLang==='en'}">English</button>
+    </div>`;
+}
+function bindLangToggle(rerender){
+  document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
+    b.onclick = () => {
+      if(selectedLang === b.getAttribute('data-lang')) return;
+      selectedLang = b.getAttribute('data-lang');
+      document.documentElement.lang = selectedLang;
+      rerender();
+    };
+  });
+}
+function categoryPickerHtml(){
+  return `<div class="field-label" id="catLbl">${tr('categoryLabel')}</div>
+      <div class="toggle-row" id="categoryRow" role="group" aria-labelledby="catLbl" aria-describedby="catHint">
+        ${['random',...WORD_CATEGORIES].map(c => `<button data-cat="${c}" class="${selectedCategory===c?'active':''}">${tr('category_'+c)}</button>`).join('')}
+      </div>
+      <p class="hint" id="catHint" style="text-align:center;margin:0;">${tr('categoryHint')}</p>`;
+}
+function settingsSummaryText(){
+  const dur = selectedTurnSeconds === 0 ? tr('turnDurationNone') : selectedTurnSeconds + 's';
+  return dur + ' · ' + tr('category_' + selectedCategory);
+}
+
 function renderProfileSetup(){
   stopPolling(); stopTick(); lastSeenKey = null;
   currentLang = selectedLang;
   refreshBrand();
   setMusicMood('setup');
-  screenEl.innerHTML = `
-    <div class="toggle-row">
-      <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
-      <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
-    </div>
+  setScreen('profile', `
+    ${langToggleHtml()}
     <div class="card">
-      <h3 style="margin-bottom:6px;">${tr('profileTitle')}</h3>
-      <p class="hint" style="margin-bottom:16px;">${tr('profileHint')}</p>
+      <h2 style="margin-bottom:6px;font-size:1.4rem;">${tr('profileTitle')}</h2>
+      <p class="hint" style="margin:0 0 16px;">${tr('profileHint')}</p>
       <label for="nameInput">${tr('nameLabel')}</label>
-      <input type="text" id="nameInput" placeholder="${tr('namePlaceholder')}" maxlength="18" value="${myName || ''}">
-      <div id="profileError" class="error" style="display:none;"></div>
-      <button class="btn btn-primary" id="continueProfileBtn">${tr('continueBtn')}</button>
+      <input type="text" id="nameInput" placeholder="${tr('namePlaceholder')}" maxlength="18" value="${esc(myName || '')}" autocomplete="given-name" autocapitalize="words" enterkeyhint="go" aria-describedby="profileError">
+      <div id="profileError" class="error" role="alert" style="display:none;"></div>
+      <button class="btn btn-primary cta-glow" id="continueProfileBtn">${tr('continueBtn')}</button>
     </div>
-  `;
-  document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
-    b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderProfileSetup(); };
-  });
+  `);
+  bindLangToggle(renderProfileSetup);
+  submitOnEnter('nameInput', 'continueProfileBtn');
   document.getElementById('continueProfileBtn').onclick = () => {
     const name = document.getElementById('nameInput').value.trim();
     const errEl = document.getElementById('profileError');
-    if(!name){ errEl.textContent = tr('errNeedName'); errEl.style.display='block'; return; }
+    if(!name){ showError(errEl, tr('errNeedName')); document.getElementById('nameInput').focus(); return; }
     myName = name;
     setSavedName(name);
     renderLanding();
@@ -906,50 +1128,44 @@ function renderLanding(){
   currentLang = selectedLang;
   refreshBrand();
   setMusicMood('setup');
-  screenEl.innerHTML = `
-    <div class="toggle-row">
-      <button data-lang="fr" class="${selectedLang==='fr'?'active':''}">Français</button>
-      <button data-lang="en" class="${selectedLang==='en'?'active':''}">English</button>
-    </div>
+  const settingsOpen = !!(document.getElementById('settingsBox') && document.getElementById('settingsBox').open);
+  setScreen('landing', `
+    ${langToggleHtml()}
     <div class="card">
       <div class="profile-row">
         <span>${tr('greeting',{name:myName})}</span>
         <button class="btn-link" id="editProfileBtn" style="width:auto;">${tr('editProfileBtn')}</button>
       </div>
       <div id="resumeSlot"></div>
-      <div class="field-label">${tr('turnDurationLabel')}</div>
-      <div class="toggle-row" id="durationRow">
-        ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
-      </div>
-      <div class="field-label">${tr('categoryLabel')}</div>
-      <div class="toggle-row" id="categoryRow">
-        ${['random',...WORD_CATEGORIES].map(c => `<button data-cat="${c}" class="${selectedCategory===c?'active':''}">${tr('category_'+c)}</button>`).join('')}
-      </div>
-      <p class="hint" style="text-align:center;margin-top:-6px;margin-bottom:14px;">${tr('categoryHint')}</p>
-      <div id="landingError" class="error" style="display:none;"></div>
+      <details class="settings" id="settingsBox" ${settingsOpen?'open':''}>
+        <summary>${icon('settings')}<span>${tr('settingsLabel')}</span><span class="sum-values" id="settingsSummary">${settingsSummaryText()}</span>${icon('chevron','chev')}</summary>
+        <div class="settings-body">
+          <div class="field-label" id="durLbl">${tr('turnDurationLabel')}</div>
+          <div class="toggle-row" id="durationRow" role="group" aria-labelledby="durLbl">
+            ${[15,30,60,0].map(s => `<button data-dur="${s}" class="${selectedTurnSeconds===s?'active':''}">${s===0?tr('turnDurationNone'):s+'s'}</button>`).join('')}
+          </div>
+          ${categoryPickerHtml()}
+        </div>
+      </details>
+      <div id="landingError" class="error" role="alert" style="display:none;"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
+        <button class="btn btn-primary cta-glow" id="createBtn">${tr('createBtn')}</button>
         <button class="btn btn-secondary" id="joinBtn">${tr('joinBtn')}</button>
       </div>
-      <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;">${tr('randomMatchBtn')}</button>
-      <p class="hint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
-      <button class="btn btn-secondary" id="aiBtn" style="margin-top:10px;">${tr('aiModeBtn')}</button>
+      <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;" aria-describedby="randomHint">${icon('dice')}${tr('randomMatchBtn')}</button>
+      <p class="hint" id="randomHint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
+      <button class="btn btn-secondary" id="aiBtn" style="margin-top:2px;">${icon('bot')}${tr('aiModeBtn')}</button>
     </div>
-    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="https://me.fedapay.com/coeur-code" target="_blank" rel="noopener" style="color:inherit;">☕ Soutenir le jeu</a></div>
-  `;
-  document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
-    b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
-  });
-  document.querySelectorAll('#durationRow button').forEach(b => {
-    b.onclick = () => { selectedTurnSeconds = parseInt(b.getAttribute('data-dur'),10); renderLanding(); };
-  });
-  document.querySelectorAll('#categoryRow button').forEach(b => {
-    b.onclick = () => { selectedCategory = b.getAttribute('data-cat'); renderLanding(); };
-  });
+    <div class="footer-note"><a href="privacy.html">${tr('privacyLink')}</a> · <a href="https://me.fedapay.com/coeur-code" target="_blank" rel="noopener">☕ ${tr('supportLink')}</a></div>
+  `);
+  bindLangToggle(renderLanding);
+  const refreshSummary = () => { const el = document.getElementById('settingsSummary'); if(el) el.textContent = settingsSummaryText(); };
+  bindChoiceRow('#durationRow', 'data-dur', v => { selectedTurnSeconds = parseInt(v,10); refreshSummary(); });
+  bindChoiceRow('#categoryRow', 'data-cat', v => { selectedCategory = v; refreshSummary(); });
   document.getElementById('editProfileBtn').onclick = renderProfileSetup;
-  document.getElementById('createBtn').onclick = onCreateRoom;
+  document.getElementById('createBtn').onclick = e => withLoading(e.currentTarget, onCreateRoom);
   document.getElementById('joinBtn').onclick = renderJoinForm;
-  document.getElementById('randomBtn').onclick = onRandomMatch;
+  document.getElementById('randomBtn').onclick = e => withLoading(e.currentTarget, onRandomMatch);
   document.getElementById('aiBtn').onclick = renderAISetup;
   checkForResumableSession();
 }
@@ -957,29 +1173,21 @@ function renderLanding(){
 function renderAISetup(){
   stopPolling(); stopTick(); lastSeenKey = null;
   setMusicMood('setup');
-  screenEl.innerHTML = `
+  setScreen('aiSetup', `
     <div class="card">
-      <h3 style="margin-bottom:6px;">${tr('aiSetupTitle')}</h3>
-      <p class="hint" style="margin-bottom:16px;">${tr('aiSetupHint')}</p>
-      <div class="field-label">${tr('aiDifficultyLabel')}</div>
-      <div class="toggle-row" id="aiDiffRow">
+      <h2 style="margin-bottom:6px;font-size:1.4rem;">${tr('aiSetupTitle')}</h2>
+      <p class="hint" style="margin:0 0 16px;">${tr('aiSetupHint')}</p>
+      <div class="field-label" id="diffLbl">${tr('aiDifficultyLabel')}</div>
+      <div class="toggle-row" id="aiDiffRow" role="group" aria-labelledby="diffLbl">
         ${['easy','normal','hard'].map(d => `<button data-diff="${d}" class="${aiDifficulty===d?'active':''}">${tr('aiDiff_'+d)}</button>`).join('')}
       </div>
-      <div class="field-label">${tr('categoryLabel')}</div>
-      <div class="toggle-row" id="categoryRow">
-        ${['random',...WORD_CATEGORIES].map(c => `<button data-cat="${c}" class="${selectedCategory===c?'active':''}">${tr('category_'+c)}</button>`).join('')}
-      </div>
-      <p class="hint" style="text-align:center;margin-top:-6px;">${tr('categoryHint')}</p>
-      <button class="btn btn-primary" id="startAiBtn" style="margin-top:14px;">${tr('aiStartBtn')}</button>
+      ${categoryPickerHtml()}
+      <button class="btn btn-primary cta-glow" id="startAiBtn" style="margin-top:18px;">${tr('aiStartBtn')}</button>
       <button class="btn-secondary btn" id="aiBackBtn" style="margin-top:10px;">${tr('backBtn')}</button>
     </div>
-  `;
-  document.querySelectorAll('#aiDiffRow button').forEach(b => {
-    b.onclick = () => { aiDifficulty = b.getAttribute('data-diff'); renderAISetup(); };
-  });
-  document.querySelectorAll('#categoryRow button').forEach(b => {
-    b.onclick = () => { selectedCategory = b.getAttribute('data-cat'); renderAISetup(); };
-  });
+  `);
+  bindChoiceRow('#aiDiffRow', 'data-diff', v => { aiDifficulty = v; });
+  bindChoiceRow('#categoryRow', 'data-cat', v => { selectedCategory = v; });
   document.getElementById('startAiBtn').onclick = startAIGame;
   document.getElementById('aiBackBtn').onclick = renderLanding;
 }
@@ -1012,7 +1220,7 @@ async function checkForResumableSession(){
   const slot = document.getElementById('resumeSlot');
   if(!slot) return; // user already navigated away
   if(!room || !room.players[session.myRole]){ clearSavedSession(); return; }
-  slot.innerHTML = `<button class="btn btn-secondary" id="resumeBtn" style="margin-bottom:14px;">${tr('resumeSessionBtn',{code:session.roomCode})}</button>`;
+  slot.innerHTML = `<button class="btn btn-secondary" id="resumeBtn" style="margin-bottom:14px;">${icon('resume')}${tr('resumeSessionBtn',{code:session.roomCode})}</button>`;
   document.getElementById('resumeBtn').onclick = () => {
     myRole = session.myRole; roomCode = session.roomCode;
     currentLang = room.lang || currentLang;
@@ -1059,22 +1267,22 @@ async function onRandomMatch(){
 function renderSearching(waitingId){
   stopPolling(); stopTick(); lastSeenKey = null;
   setMusicMood('setup');
-  screenEl.innerHTML = `
+  setScreen('searching', `
     <div class="card code-display">
-      <div style="margin-top:6px;color:var(--ink-soft);font-size:.9rem;">
-        <span class="waiting-pulse"></span>${tr('searchingLabel')}
+      <div style="margin-top:6px;color:var(--ink-soft);font-size:.95rem;" role="status">
+        <span class="waiting-pulse" aria-hidden="true"></span>${tr('searchingLabel')}
       </div>
       <button class="btn btn-secondary" id="cancelSearchBtn" style="margin-top:20px;width:auto;">${tr('cancelSearchBtn')}</button>
     </div>
-  `;
-  document.getElementById('cancelSearchBtn').onclick = async () => {
+  `);
+  document.getElementById('cancelSearchBtn').onclick = e => withLoading(e.currentTarget, async () => {
     stopPolling();
     const data = await loadRaw(QUEUE_KEY);
     let queue = (data && Array.isArray(data.waiting)) ? data.waiting : [];
     queue = queue.filter(e => e.id !== waitingId);
     await saveRaw(QUEUE_KEY, { waiting: queue });
     renderLanding();
-  };
+  });
   startPolling(async () => {
     const match = await loadRaw('match-' + waitingId);
     if(match && match.roomCode){
@@ -1094,17 +1302,20 @@ function renderSearching(waitingId){
 }
 
 function renderJoinForm(){
-  screenEl.innerHTML = `
+  setScreen('join', `
     <div class="card">
-      <p class="hint" style="margin-bottom:16px;">${tr('joiningAs',{name:myName})}</p>
+      <p class="hint" style="margin:0 0 16px;">${tr('joiningAs',{name:myName})}</p>
       <label for="codeInput">${tr('codeLabel')}</label>
-      <input type="text" id="codeInput" placeholder="${tr('codePlaceholder')}" maxlength="5" style="text-transform:uppercase;">
-      <div id="joinError" class="error" style="display:none;"></div>
-      <button class="btn btn-primary" id="confirmJoinBtn">${tr('confirmJoinBtn')}</button>
+      <input type="text" id="codeInput" placeholder="${tr('codePlaceholder')}" maxlength="5" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700;" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-describedby="joinError">
+      <div id="joinError" class="error" role="alert" style="display:none;"></div>
+      <button class="btn btn-primary cta-glow" id="confirmJoinBtn">${tr('confirmJoinBtn')}</button>
       <button class="btn btn-secondary" id="backBtn" style="margin-top:10px;">${tr('backBtn')}</button>
     </div>
-  `;
-  document.getElementById('confirmJoinBtn').onclick = onJoinRoom;
+  `);
+  const codeInput = document.getElementById('codeInput');
+  codeInput.focus();
+  submitOnEnter('codeInput', 'confirmJoinBtn');
+  document.getElementById('confirmJoinBtn').onclick = e => withLoading(e.currentTarget, onJoinRoom);
   document.getElementById('backBtn').onclick = renderLanding;
 }
 
@@ -1124,10 +1335,10 @@ async function onJoinRoom(){
   aiMode = false;
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const errEl = document.getElementById('joinError');
-  if(!code){ errEl.textContent = tr('errNeedCode'); errEl.style.display='block'; return; }
+  if(!code){ showError(errEl, tr('errNeedCode')); return; }
   const room = await loadRoom(code);
-  if(!room){ errEl.textContent = tr('errNoRoom'); errEl.style.display='block'; return; }
-  if(room.players.p2){ errEl.textContent = tr('errRoomFull'); errEl.style.display='block'; return; }
+  if(!room){ showError(errEl, tr('errNoRoom')); return; }
+  if(room.players.p2){ showError(errEl, tr('errRoomFull')); return; }
   myRole = 'p2'; roomCode = code; currentLang = room.lang || 'fr';
   saveSession();
   refreshBrand();
@@ -1139,20 +1350,27 @@ async function onJoinRoom(){
 
 function renderWaitingRoom(room){
   setMusicMood('setup');
-  screenEl.innerHTML = `
+  const canShare = !!navigator.share;
+  setScreen('waiting', `
     <div class="card code-display">
-      <div class="hint">${tr('shareHint')}</div>
-      <div class="code">${room.code}</div>
-      <div style="display:flex;justify-content:center;margin-top:14px;">
-        <button class="btn btn-secondary" id="copyBtn" style="width:auto;">${tr('copyBtn')}</button>
+      <div class="hint" style="margin:0;">${tr('shareHint')}</div>
+      <div class="code" aria-label="${esc(room.code.split('').join(' '))}">${esc(room.code)}</div>
+      <div class="btn-row" style="justify-content:center;margin-top:14px;">
+        <button class="btn btn-secondary" id="copyBtn" style="width:auto;">${icon('copy')}${tr('copyBtn')}</button>
+        ${canShare ? `<button class="btn btn-secondary" id="shareBtn" style="width:auto;">${icon('share')}${tr('shareBtn')}</button>` : ''}
       </div>
-      <div style="margin-top:22px;color:var(--ink-soft);font-size:.9rem;">
-        <span class="waiting-pulse"></span>${tr('waitingPartner')}
+      <div style="margin-top:22px;color:var(--ink-soft);font-size:.95rem;" role="status">
+        <span class="waiting-pulse" aria-hidden="true"></span>${tr('waitingPartner')}
       </div>
     </div>
-  `;
+  `);
   document.getElementById('copyBtn').onclick = async () => {
-    try{ await navigator.clipboard.writeText(room.code); }catch(e){}
+    try{ await navigator.clipboard.writeText(room.code); showToast(tr('copiedToast'), 'check'); buzz(15); }
+    catch(e){ showToast(tr('copyFailedToast'), 'alert'); }
+  };
+  const shareBtn = document.getElementById('shareBtn');
+  if(shareBtn) shareBtn.onclick = async () => {
+    try{ await navigator.share({ title: 'Cœur Codé', text: tr('shareText',{code:room.code}) }); }catch(e){ /* user cancelled */ }
   };
   startPolling(async () => {
     const fresh = await loadRoom(roomCode);
@@ -1172,25 +1390,27 @@ function renderWordSetup(room){
   setMusicMood('setup');
   const me = room.players[myRole];
   const already = !!me.word;
-  screenEl.innerHTML = `
+  setScreen('word', `
     <div class="card">
-      <h3 style="margin-bottom:6px;">${tr('chooseWordTitle')}</h3>
-      <p class="hint" style="margin-bottom:16px;">${tr('chooseWordHint')}</p>
-      ${room.category && room.category !== 'random' ? `<p class="hint" style="margin-bottom:16px;">${tr('categorySuggested',{theme:tr('category_'+room.category)})}</p>` : ''}
+      <h2 style="margin-bottom:6px;font-size:1.4rem;">${tr('chooseWordTitle')}</h2>
+      <p class="hint" id="wordHint" style="margin:0 0 16px;">${tr('chooseWordHint')}</p>
+      ${room.category && room.category !== 'random' ? `<p class="hint" style="margin:0 0 16px;">${tr('categorySuggested',{theme:tr('category_'+room.category)})}</p>` : ''}
       ${already
-        ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>${tr('wordSavedWaiting')}</div>`
-        : `<input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15">
-           <div id="wordError" class="error" style="display:none;"></div>
-           <button class="btn btn-primary" id="submitWordBtn">${tr('submitWordBtn')}</button>`
+        ? `<div class="turn-banner mine" role="status"><span class="waiting-pulse" aria-hidden="true"></span>${tr('wordSavedWaiting')}</div>`
+        : `<label for="wordInput" class="sr-only">${tr('chooseWordTitle')}</label>
+           <input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" aria-describedby="wordHint wordError" style="text-transform:uppercase;letter-spacing:.12em;font-weight:700;">
+           <div id="wordError" class="error" role="alert" style="display:none;"></div>
+           <button class="btn btn-primary cta-glow" id="submitWordBtn">${tr('submitWordBtn')}</button>`
       }
     </div>
-  `;
+  `);
   if(!already){
-    document.getElementById('submitWordBtn').onclick = async () => {
+    submitOnEnter('wordInput', 'submitWordBtn');
+    document.getElementById('submitWordBtn').onclick = e => withLoading(e.currentTarget, async () => {
       const raw = document.getElementById('wordInput').value;
       const word = normWord(raw);
       const errEl = document.getElementById('wordError');
-      if(word.length < 3){ errEl.textContent = tr('errWordLen'); errEl.style.display='block'; return; }
+      if(word.length < 3){ showError(errEl, tr('errWordLen')); document.getElementById('wordInput').focus(); return; }
 
       if(aiMode){
         localRoom.players.p1.word = word;
@@ -1216,7 +1436,7 @@ function renderWordSetup(room){
       }
       await saveRoom(fresh);
       renderWordSetup(fresh);
-    };
+    });
   }
   if(aiMode) return; // no partner to wait for — nothing to poll
   // Only watch for the game actually starting — never redraw this screen otherwise,
@@ -1270,6 +1490,13 @@ function applyHint(room, askerRole){
   }
 }
 
+// Remembers what the previous game render showed, so only what just changed animates
+let lastGameView = { roundKey: null, myGuesses: [], oppGuesses: [], myTurn: null, scores: null };
+function announce(msg){
+  const el = document.getElementById('srLive');
+  if(el){ el.textContent = ''; setTimeout(() => { el.textContent = msg; }, 30); }
+}
+
 function renderGame(room){
   if(!room){
     // couldn't load the room (network hiccup) — keep the current screen up and retry shortly
@@ -1299,37 +1526,48 @@ function renderGame(room){
   const myMasked = maskedWord(me.word, opp.guesses);
   const scores = room.scores || {p1:0,p2:0};
 
+  const roundKey = room.code + '#' + (room.round || 1);
+  const sameRound = lastGameView.roundKey === roundKey;
+  const newMine = sameRound ? me.guesses.filter(l => !lastGameView.myGuesses.includes(l)) : [];
+  const newTheirs = sameRound ? opp.guesses.filter(l => !lastGameView.oppGuesses.includes(l)) : [];
+  const scoreChanged = !!lastGameView.scores && (lastGameView.scores.p1 !== (scores.p1||0) || lastGameView.scores.p2 !== (scores.p2||0));
+  const turnJustCameBack = sameRound && lastGameView.myTurn === false && myTurn;
+  lastGameView = { roundKey, myGuesses: me.guesses.slice(), oppGuesses: opp.guesses.slice(), myTurn, scores: {p1:scores.p1||0, p2:scores.p2||0} };
+  const keyboardLocked = !myTurn || pause.status !== 'none';
+  const slotsHtml = (masked, newLetters) => masked.map(l =>
+    `<div class="slot ${l!=='_' && newLetters.includes(l) ? 'new' : ''}">${l==='_'?'':l}</div>`).join('');
+
   let pauseBlockHtml = '';
   if(aiMode){
     if(pause.status === 'active'){
-      pauseBlockHtml = `<div class="pause-box"><p>${tr('pauseActive')}</p>
+      pauseBlockHtml = `<div class="pause-box" role="status"><p>${tr('pauseActive')}</p>
         <button class="btn btn-primary btn-sm" id="resumeBtn" style="width:auto;">${tr('resumeBtn')}</button></div>`;
     }
   } else if(pause.status === 'pending'){
     if(pause.requestedBy === myRole){
-      pauseBlockHtml = `<div class="pause-box"><p>${tr('pausePendingSelf',{name:opp.name})}</p></div>`;
+      pauseBlockHtml = `<div class="pause-box" role="status"><p>${tr('pausePendingSelf',{name:opp.name})}</p></div>`;
     } else {
-      pauseBlockHtml = `<div class="pause-box"><p>${tr('pausePendingOther',{name:opp.name})}</p>
+      pauseBlockHtml = `<div class="pause-box" role="status"><p>${tr('pausePendingOther',{name:opp.name})}</p>
         <div class="btn-row">
           <button class="btn btn-primary btn-sm" id="acceptPauseBtn">${tr('acceptBtn')}</button>
           <button class="btn btn-secondary btn-sm" id="declinePauseBtn">${tr('declineBtn')}</button>
         </div></div>`;
     }
   } else if(pause.status === 'active'){
-    pauseBlockHtml = `<div class="pause-box"><p>${tr('pauseActive')}</p>
+    pauseBlockHtml = `<div class="pause-box" role="status"><p>${tr('pauseActive')}</p>
       <button class="btn btn-primary btn-sm" id="resumeBtn" style="width:auto;">${tr('resumeBtn')}</button></div>`;
   }
 
   let hintBlockHtml = '';
   if(hintReq.status === 'pending'){
     if(hintReq.requestedBy === myRole){
-      hintBlockHtml = `<div class="pause-box"><p>${tr('hintPendingSelf',{name:opp.name})}</p></div>`;
+      hintBlockHtml = `<div class="pause-box" role="status"><p>${tr('hintPendingSelf',{name:opp.name})}</p></div>`;
     } else if(!aiMode){
       const iOwe = (hints[myRole+'Debt'] || 0) > 0;
       hintBlockHtml = iOwe
-        ? `<div class="pause-box"><p>${tr('hintPendingOtherForced',{name:opp.name})}</p>
+        ? `<div class="pause-box" role="status"><p>${tr('hintPendingOtherForced',{name:opp.name})}</p>
             <div class="btn-row"><button class="btn btn-primary btn-sm" id="giveHintBtn">${tr('giveHintBtn')}</button></div></div>`
-        : `<div class="pause-box"><p>${tr('hintPendingOther',{name:opp.name})}</p>
+        : `<div class="pause-box" role="status"><p>${tr('hintPendingOther',{name:opp.name})}</p>
             <div class="btn-row">
               <button class="btn btn-primary btn-sm" id="giveHintBtn">${tr('giveHintBtn')}</button>
               <button class="btn btn-secondary btn-sm" id="declineHintBtn">${tr('declineBtn')}</button>
@@ -1338,85 +1576,105 @@ function renderGame(room){
   }
   const owedByMe = (hints[myRole+'Debt'] || 0) > 0;
   const hintDebtNoticeHtml = (owedByMe && hintReq.status === 'none')
-    ? `<p class="hint" style="text-align:center;margin-bottom:10px;">${tr('hintDebtNotice',{name:opp.name})}</p>` : '';
+    ? `<p class="hint" style="text-align:center;margin:0 0 10px;">${tr('hintDebtNotice',{name:opp.name})}</p>` : '';
 
   const showTimer = hasTimer && pause.status === 'none';
   const showPauseRequestLink = pause.status === 'none';
   const showHintRequestLink = pause.status === 'none' && hintReq.status === 'none';
 
-  screenEl.innerHTML = `
+  setScreen('game', `
     <div class="card">
+      <h2 class="sr-only">${tr('scoreLabel')}</h2>
       <div class="players-row">
-        <div class="player-chip ${myRole}"><div class="role-label">${tr('youLabel')}</div><div class="name">${me.name}</div></div>
-        <div class="link-mid">⟷</div>
-        <div class="player-chip ${oppRole}"><div class="role-label">${tr('partnerLabel')}</div><div class="name">${opp.name}</div></div>
+        <div class="player-chip ${myRole} ${myTurn && pause.status==='none' ? 'is-turn' : ''}"><div class="role-label">${tr('youLabel')}</div><div class="name">${esc(me.name)}</div></div>
+        <div class="link-mid" aria-hidden="true">${icon('arrows')}</div>
+        <div class="player-chip ${oppRole} ${!myTurn && pause.status==='none' ? 'is-turn' : ''}"><div class="role-label">${tr('partnerLabel')}</div><div class="name">${esc(opp.name)}</div></div>
       </div>
 
       <div class="score-row">
-        <div class="score-item"><span class="score-name">${me.name}</span><span class="score-num">${scores[myRole]||0}</span></div>
-        <div class="score-sep">–</div>
-        <div class="score-item"><span class="score-name">${opp.name}</span><span class="score-num">${scores[oppRole]||0}</span></div>
+        <div class="score-item"><span class="score-name">${esc(me.name)}</span><span class="score-num ${scoreChanged?'bump':''}">${scores[myRole]||0}</span></div>
+        <div class="score-sep" aria-hidden="true">–</div>
+        <div class="score-item"><span class="score-name">${esc(opp.name)}</span><span class="score-num ${scoreChanged?'bump':''}">${scores[oppRole]||0}</span></div>
       </div>
 
       ${pauseBlockHtml}
       ${hintBlockHtml}
       ${hintDebtNoticeHtml}
 
-      ${pause.status === 'none' ? `<div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">${myTurn ? tr('yourTurn') : tr('partnerThinking',{name:opp.name})}</div>` : ''}
+      ${pause.status === 'none' ? `<div class="turn-banner ${myTurn ? 'mine' : 'theirs'}">${myTurn ? tr('yourTurn') : `<span class="waiting-pulse" aria-hidden="true"></span>${tr('partnerThinking',{name:opp.name})}`}</div>` : ''}
 
       ${showTimer ? `
-      <div class="timer-wrap">
-        <div class="timer-bar-outer"><div class="timer-bar-inner" id="timerBar" style="width:100%;"></div></div>
-        <div class="timer-text"><span id="timerText">${room.turnSeconds}s</span> · ${tr('timeLeftLabel')}</div>
+      <div class="timer-wrap" id="timerWrap">
+        <div class="timer-bar-outer" role="progressbar" aria-label="${tr('timeLeftLabel')}" aria-valuemin="0" aria-valuemax="${room.turnSeconds}" id="timerBarOuter"><div class="timer-bar-inner" id="timerBar" style="width:100%;"></div></div>
+        <div class="timer-text" aria-hidden="true"><span id="timerText">${room.turnSeconds}s</span> · ${tr('timeLeftLabel')}</div>
       </div>` : ''}
 
-      ${aiMode
-        ? (pause.status === 'none' ? `<div class="pause-link-row"><button class="btn-link" id="aiPauseToggleBtn">${tr('pauseRequestBtn')}</button></div>` : '')
-        : (showPauseRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="pauseRequestBtn">${tr('pauseRequestBtn')}</button></div>` : '')
-      }
-      ${showHintRequestLink ? `<div class="pause-link-row"><button class="btn-link" id="hintRequestBtn">${tr('hintRequestBtn')}</button></div>` : ''}
+      <div class="btn-ghost-row">
+        ${aiMode
+          ? (pause.status === 'none' ? `<button class="btn-link" id="aiPauseToggleBtn">${icon('pause')}${tr('pauseRequestBtn')}</button>` : '')
+          : (showPauseRequestLink ? `<button class="btn-link" id="pauseRequestBtn">${icon('pause')}${tr('pauseRequestBtn')}</button>` : '')
+        }
+        ${showHintRequestLink ? `<button class="btn-link" id="hintRequestBtn">${icon('bulb')}${tr('hintRequestBtn')}</button>` : ''}
+      </div>
 
-      <div class="section-label">${tr('opponentWordLabel',{name:opp.name})}</div>
-      <div class="word-row theirs">${oppMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
+      <div class="section-label" id="oppWordLbl">${tr('opponentWordLabel',{name:opp.name})}</div>
+      <div class="word-row theirs" style="--n:${oppMasked.length};--gap:${oppMasked.length>9?4:6}px" role="img" aria-labelledby="oppWordLbl" aria-describedby="oppWordSr">${slotsHtml(oppMasked, newMine)}</div>
+      <span class="sr-only" id="oppWordSr">${oppMasked.map(l => l==='_' ? '?' : l).join(' ')}</span>
 
-      <div class="keyboard" id="keyboard">
+      <div class="keyboard ${keyboardLocked ? 'locked' : ''}" id="keyboard" role="group" aria-label="${tr('yourTurn')}">
         ${ALPHABET.map(letter => {
           const guessed = me.guesses.includes(letter);
           const hit = guessed && opp.word.includes(letter);
           const miss = guessed && !hit;
-          const disabled = !myTurn || guessed || pause.status !== 'none';
-          const cls = hit ? 'hit' : (miss ? 'miss' : '');
+          const disabled = keyboardLocked || guessed;
+          const cls = (hit ? 'hit' : (miss ? 'miss' : '')) + (newMine.includes(letter) ? ' new' : '');
           return `<button class="key ${cls}" data-letter="${letter}" ${disabled?'disabled':''}>${letter}</button>`;
         }).join('')}
       </div>
 
-      <div class="section-label">${tr('yourWordLabel',{name:opp.name})}</div>
-      <div class="word-row mine">${myMasked.map(l => `<div class="slot">${l==='_'?'':l}</div>`).join('')}</div>
+      <div class="section-label" id="myWordLbl">${tr('yourWordLabel',{name:opp.name})}</div>
+      <div class="word-row mine" style="--n:${myMasked.length};--gap:${myMasked.length>9?4:6}px" role="img" aria-labelledby="myWordLbl" aria-describedby="myWordSr">${slotsHtml(myMasked, newTheirs)}</div>
+      <span class="sr-only" id="myWordSr">${myMasked.map(l => l==='_' ? '?' : l).join(' ')}</span>
     </div>
     <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
-  `;
+  `);
+
+  if(newMine.length){
+    const l = newMine[newMine.length - 1];
+    const hit = opp.word.includes(l);
+    buzz(hit ? 20 : [30, 40, 30]);
+    announce(tr(hit ? 'letterHit' : 'letterMiss', {letter:l}));
+  } else if(turnJustCameBack){
+    buzz(25);
+    announce(tr('yourTurn'));
+  }
 
   if(myTurn && pause.status === 'none'){
     document.querySelectorAll('#keyboard .key').forEach(btn => {
-      btn.onclick = () => onGuess(btn.getAttribute('data-letter'));
+      btn.onclick = () => {
+        if(btn.disabled) return;
+        // instant feedback while the network round-trip runs; lock the rest of the keyboard
+        btn.classList.add('pending');
+        const kb = document.getElementById('keyboard');
+        kb.classList.add('locked');
+        kb.querySelectorAll('.key').forEach(k => { k.disabled = true; });
+        onGuess(btn.getAttribute('data-letter'));
+      };
     });
   }
-  const pauseBtn = document.getElementById('pauseRequestBtn');
-  if(pauseBtn) pauseBtn.onclick = onRequestPause;
-  const acceptBtn = document.getElementById('acceptPauseBtn');
-  if(acceptBtn) acceptBtn.onclick = onAcceptPause;
-  const declineBtn = document.getElementById('declinePauseBtn');
-  if(declineBtn) declineBtn.onclick = onResolvePause;
-  const resumeBtn = document.getElementById('resumeBtn');
-  if(resumeBtn) resumeBtn.onclick = aiMode ? onToggleAIPause : onResolvePause;
-  const aiPauseBtn = document.getElementById('aiPauseToggleBtn');
-  if(aiPauseBtn) aiPauseBtn.onclick = onToggleAIPause;
-  const hintReqBtn = document.getElementById('hintRequestBtn');
-  if(hintReqBtn) hintReqBtn.onclick = aiMode ? onRequestHintAI : onRequestHint;
-  const giveHintBtn = document.getElementById('giveHintBtn');
-  if(giveHintBtn) giveHintBtn.onclick = onGiveHint;
-  const declineHintBtn = document.getElementById('declineHintBtn');
-  if(declineHintBtn) declineHintBtn.onclick = onDeclineHint;
+  // network-backed actions show a spinner and can't be double-tapped
+  const bindAction = (id, fn) => {
+    const b = document.getElementById(id);
+    if(b) b.onclick = e => withLoading(e.currentTarget, async () => { await fn(); });
+  };
+  bindAction('pauseRequestBtn', onRequestPause);
+  bindAction('acceptPauseBtn', onAcceptPause);
+  bindAction('declinePauseBtn', onResolvePause);
+  bindAction('resumeBtn', aiMode ? onToggleAIPause : onResolvePause);
+  bindAction('aiPauseToggleBtn', onToggleAIPause);
+  bindAction('hintRequestBtn', aiMode ? onRequestHintAI : onRequestHint);
+  bindAction('giveHintBtn', onGiveHint);
+  bindAction('declineHintBtn', onDeclineHint);
 
   if(showTimer){
     const turnStartedAt = room.turnStartedAt || Date.now();
@@ -1427,6 +1685,10 @@ function renderGame(room){
       const txt = document.getElementById('timerText');
       if(bar) bar.style.width = Math.max(0,(remaining/room.turnSeconds*100)) + '%';
       if(txt) txt.textContent = remaining + 's';
+      const wrap = document.getElementById('timerWrap');
+      if(wrap) wrap.classList.toggle('low', remaining <= 5);
+      const outer = document.getElementById('timerBarOuter');
+      if(outer){ outer.setAttribute('aria-valuenow', remaining); outer.setAttribute('aria-valuetext', tr('secondsLeft',{s:remaining})); }
       return remaining;
     };
     updateTimer(); // set the correct value immediately, no flash back to full
@@ -1794,38 +2056,48 @@ function renderEndScreen(room){
           </div>
         `).join('')}
       </div>` : '';
-  screenEl.innerHTML = `
+  const firstShow = currentScreenName !== 'end';
+  const wordCard = (p, id) => `<div><div class="reveal-head"><span><b>${esc(p.name)}</b> : ${esc(p.word)}</span><button class="def-btn" data-def-word="${esc(p.word)}" data-def-target="${id}" aria-expanded="false" aria-controls="${id}" aria-label="${tr('defBtnTitle')} ${esc(p.word)}" title="${tr('defBtnTitle')}">${icon('info')}</button></div>
+          <div class="def-box" id="${id}" aria-live="polite" style="display:none;"></div>
+        </div>`;
+  setScreen('end', `
     <div class="card winner-screen">
-      <div class="trophy">🏆</div>
-      <h2>${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
-      <p class="hint">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
+      <div class="trophy" aria-hidden="true">${iWon ? '🏆' : '💌'}</div>
+      <h2 tabindex="-1" id="endTitle">${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
+      <p class="hint" style="margin-top:4px;">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
       <div class="reveal-words">
-        <div><b>${p1.name}</b> : ${p1.word} <button class="def-btn" data-def-word="${p1.word}" data-def-target="def-p1" title="${tr('defBtnTitle')}">ⓘ</button>
-          <div class="def-box" id="def-p1" style="display:none;"></div>
-        </div>
-        <div><b>${p2.name}</b> : ${p2.word} <button class="def-btn" data-def-word="${p2.word}" data-def-target="def-p2" title="${tr('defBtnTitle')}">ⓘ</button>
-          <div class="def-box" id="def-p2" style="display:none;"></div>
-        </div>
+        ${wordCard(p1, 'def-p1')}
+        ${wordCard(p2, 'def-p2')}
       </div>
       <div class="section-label" style="margin-top:20px;">${tr('scoreLabel')}</div>
       <div class="score-row">
-        <div class="score-item"><span class="score-name">${p1.name}</span><span class="score-num">${scores.p1||0}</span></div>
-        <div class="score-sep">–</div>
-        <div class="score-item"><span class="score-name">${p2.name}</span><span class="score-num">${scores.p2||0}</span></div>
+        <div class="score-item"><span class="score-name">${esc(p1.name)}</span><span class="score-num ${firstShow?'bump':''}">${scores.p1||0}</span></div>
+        <div class="score-sep" aria-hidden="true">–</div>
+        <div class="score-item"><span class="score-name">${esc(p2.name)}</span><span class="score-num ${firstShow?'bump':''}">${scores.p2||0}</span></div>
       </div>
       ${historyHtml}
-      <button class="btn btn-primary" id="replayBtn" style="margin-top:16px;">${tr('replayBtn')}</button>
+      <button class="btn btn-primary cta-glow" id="replayBtn" style="margin-top:16px;">${tr('replayBtn')}</button>
       <button class="btn-link" id="resetScoreBtn">${tr('resetScoreBtn')}</button>
     </div>
     <div class="footer-note">${tr('footerNote',{code:room.code, round:(room.round||1)})}</div>
-  `;
-  if(iWon) spawnConfetti();
+  `);
+  if(firstShow){
+    if(iWon){ spawnConfetti(); buzz([40, 60, 80]); } else { buzz(60); }
+    const title = document.getElementById('endTitle');
+    if(title) title.focus({preventScroll:true});
+  }
 
   document.querySelectorAll('.def-btn').forEach(btn => {
-    btn.onclick = () => showDefinition(btn.getAttribute('data-def-word'), room.lang, btn.getAttribute('data-def-target'));
+    btn.onclick = () => {
+      const box = document.getElementById(btn.getAttribute('data-def-target'));
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      if(open){ box.style.display = 'none'; btn.setAttribute('aria-expanded','false'); return; }
+      btn.setAttribute('aria-expanded','true');
+      showDefinition(btn.getAttribute('data-def-word'), room.lang, btn.getAttribute('data-def-target'));
+    };
   });
 
-  document.getElementById('replayBtn').onclick = async () => {
+  document.getElementById('replayBtn').onclick = e => withLoading(e.currentTarget, async () => {
     if(aiMode){
       const room = localRoom;
       room.players.p1.word = null; room.players.p1.guesses = [];
@@ -1855,8 +2127,8 @@ function renderEndScreen(room){
     fresh.hintRequest = { status: 'none', requestedBy: null };
     await saveRoom(fresh);
     renderWordSetup(fresh);
-  };
-  document.getElementById('resetScoreBtn').onclick = async () => {
+  });
+  document.getElementById('resetScoreBtn').onclick = e => withLoading(e.currentTarget, async () => {
     if(aiMode){
       localRoom.scores = {p1:0,p2:0};
       localRoom.history = [];
@@ -1869,7 +2141,7 @@ function renderEndScreen(room){
     fresh.history = [];
     await saveRoom(fresh);
     renderEndScreen(fresh);
-  };
+  });
 
   if(aiMode) return; // local game — nothing to poll
 
@@ -1883,7 +2155,7 @@ function renderEndScreen(room){
 }
 
 /* ---------- Ambient background music (generated, no external file) ---------- */
-let musicEnabled = true;
+let musicEnabled = (function(){ try{ return localStorage.getItem('cc_music') !== 'off'; }catch(e){ return true; } })();
 let audioCtx = null, masterGain = null, moodTimers = [], currentMood = 'setup';
 
 const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C D E G A C — major pentatonic
@@ -2008,11 +2280,30 @@ function setMusicMood(mood){
   if(audioCtx) applyMood(mood);
 }
 
+function paintMusicToggle(){
+  const b = document.getElementById('musicToggle');
+  b.innerHTML = icon(musicEnabled ? 'volume' : 'mute');
+  b.setAttribute('aria-pressed', musicEnabled ? 'true' : 'false');
+  b.setAttribute('aria-label', tr(musicEnabled ? 'musicOn' : 'musicOff'));
+  b.title = tr(musicEnabled ? 'musicOn' : 'musicOff');
+}
+paintMusicToggle();
 document.getElementById('musicToggle').onclick = () => {
   musicEnabled = !musicEnabled;
-  document.getElementById('musicToggle').textContent = musicEnabled ? '🔊' : '🔇';
+  try{ localStorage.setItem('cc_music', musicEnabled ? 'on' : 'off'); }catch(e){}
+  paintMusicToggle();
   if(musicEnabled){ ensureAudioStarted(); } else { stopCurrentMood(); }
 };
+
+// Physical keyboard: type a letter to play it during your turn
+document.addEventListener('keydown', e => {
+  if(currentScreenName !== 'game' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+  if(!/^[a-zA-Z]$/.test(e.key)) return;
+  const btn = document.querySelector(`#keyboard .key[data-letter="${e.key.toUpperCase()}"]`);
+  if(btn && !btn.disabled){ e.preventDefault(); btn.click(); }
+});
 document.addEventListener('click', function firstGestureUnlock(){
   ensureAudioStarted();
   document.removeEventListener('click', firstGestureUnlock);
