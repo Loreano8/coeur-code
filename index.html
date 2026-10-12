@@ -231,6 +231,7 @@
     font-size:2rem;background:var(--warn-soft);color:var(--warn);animation:popIn .5s var(--ease) both;
   }
   .winner-screen h2{font-size:1.75rem;font-weight:800;margin-top:14px;animation:popIn .5s var(--ease) .08s both;}
+  .winner-screen h2 + .hint{margin-top:8px;}
   .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
   .reveal-words div{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-ctl);padding:10px 16px;font-family:'Geist Mono',ui-monospace,monospace;font-size:1.05rem;font-weight:600;text-transform:uppercase;}
   .def-btn{background:none;border:none;color:var(--p2);font-size:1rem;cursor:pointer;padding:0 0 0 6px;vertical-align:middle;}
@@ -1874,10 +1875,10 @@ function renderEndScreen(room){
       <h2>${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
       <p class="hint">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
       <div class="reveal-words">
-        <div><b>${p1.name}</b> : ${p1.word} <button class="def-btn" data-def-word="${p1.word}" data-def-target="def-p1" title="${tr('defBtnTitle')}">ⓘ</button>
+        <div><b>${p1.name}</b> : ${p1.word} <button class="def-btn" data-def-word="${p1.word}" data-def-target="def-p1" title="${tr('defBtnTitle')}" aria-label="${tr('defBtnTitle')}"><i class="ph ph-info"></i></button>
           <div class="def-box" id="def-p1" style="display:none;"></div>
         </div>
-        <div><b>${p2.name}</b> : ${p2.word} <button class="def-btn" data-def-word="${p2.word}" data-def-target="def-p2" title="${tr('defBtnTitle')}">ⓘ</button>
+        <div><b>${p2.name}</b> : ${p2.word} <button class="def-btn" data-def-word="${p2.word}" data-def-target="def-p2" title="${tr('defBtnTitle')}" aria-label="${tr('defBtnTitle')}"><i class="ph ph-info"></i></button>
           <div class="def-box" id="def-p2" style="display:none;"></div>
         </div>
       </div>
