@@ -5,207 +5,281 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cœur Codé</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2B2630">
+<meta name="theme-color" content="#F3F2F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111015" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cœur Codé">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 <style>
+  /*
+    Design read: redesign (preserve) of a two-player mobile word-duel game for casual players,
+    with a playful-but-crafted language, leaning toward native CSS tokens + Geist / Geist Mono.
+    Dials: DESIGN_VARIANCE 4 (app UI, centred column is the right call), MOTION_INTENSITY 5, VISUAL_DENSITY 4.
+    Color: neutral cool base. The two player colors (rose = p1, teal = p2) are semantic game state,
+    not decoration. Primary actions use ink, so player colors keep their meaning.
+    Radius system: containers 20px, controls 12px, letter tiles and keys 10px.
+  */
   :root{
-    --bg:#F7F4FB;
-    --surface:#FFFFFF;
-    --ink:#2B2630;
-    --ink-soft:#6B6475;
-    --p1:#E8546B;
-    --p1-soft:#FBE1E6;
-    --p2:#1F6F78;
-    --p2-soft:#DCEEEF;
-    --gold:#E8A23D;
-    --purple:#B784E0;
-    --blue:#5AA8D6;
-    --line:#E4DEEE;
+    --bg:#F3F2F6;
+    --surface:#FCFCFD;
+    --surface-2:#EEEDF2;
+    --ink:#17161C;
+    --ink-soft:#5D5968;
+    --line:#E0DEE7;
+    --p1:#C42F4D;
+    --p1-soft:#FBE7EB;
+    --p2:#0D6871;
+    --p2-soft:#DDEEEF;
+    --warn:#7E5307;
+    --warn-soft:#FBF1DC;
+    --warn-line:#EED9AC;
+    --on-ink:#FCFCFD;
+    --shadow:rgba(40,36,56,.10);
+    --r-box:20px;
+    --r-ctl:12px;
+    --r-tile:10px;
+    --ease:cubic-bezier(.16,1,.3,1);
     --safe-t:env(safe-area-inset-top,0px);
     --safe-b:env(safe-area-inset-bottom,0px);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#111015;
+      --surface:#1A1920;
+      --surface-2:#24232B;
+      --ink:#EFEEF4;
+      --ink-soft:#A6A2B2;
+      --line:#2E2C36;
+      --p1:#F2728A;
+      --p1-soft:rgba(242,114,138,.14);
+      --p2:#52BDC6;
+      --p2-soft:rgba(82,189,198,.14);
+      --warn:#EBBE68;
+      --warn-soft:rgba(235,190,104,.10);
+      --warn-line:rgba(235,190,104,.28);
+      --on-ink:#15141A;
+      --shadow:rgba(0,0,0,.45);
+      color-scheme:dark;
+    }
   }
   *{box-sizing:border-box;}
   html{-webkit-tap-highlight-color:transparent;}
   body{
-    margin:0;color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;
+    margin:0;color:var(--ink);font-family:'Geist',system-ui,sans-serif;min-height:100dvh;
     display:flex;align-items:flex-start;justify-content:center;
-    padding:calc(32px + var(--safe-t)) 16px calc(60px + var(--safe-b));
-    background:
-      radial-gradient(38vh 32vh at 12% 8%, rgba(232,84,107,.16), transparent 70%),
-      radial-gradient(42vh 36vh at 88% 18%, rgba(90,168,214,.15), transparent 70%),
-      radial-gradient(46vh 40vh at 20% 92%, rgba(183,132,224,.14), transparent 70%),
-      radial-gradient(40vh 34vh at 90% 96%, rgba(232,162,61,.13), transparent 70%),
-      var(--bg);
-    background-attachment:fixed;
+    padding:calc(28px + var(--safe-t)) 16px calc(56px + var(--safe-b));
+    background:var(--bg);
     overscroll-behavior:none;
     user-select:none;
+    -webkit-font-smoothing:antialiased;
   }
   input, textarea{user-select:text;}
-  .app{width:100%;max-width:520px;}
-  h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
-  .brand{text-align:center;margin-bottom:20px;}
-  .brand h1{
-    font-size:2.3rem;font-weight:700;letter-spacing:-0.01em;
-    background:linear-gradient(100deg,var(--p1) 10%,var(--gold) 50%,var(--p2) 90%);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    animation:titleFloat 5s ease-in-out infinite;
-    display:inline-block;
-  }
-  @keyframes titleFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-3px) rotate(-.6deg);}}
-  .brand .signal{width:100%;height:18px;display:flex;align-items:center;justify-content:center;margin:10px 0 6px;}
-  .signal .dash{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--ink-soft) 0 6px, transparent 6px 12px);opacity:.55;}
-  .signal .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);margin:0 10px;box-shadow:0 0 0 5px rgba(232,162,61,.18);animation:dotGlow 1.6s ease-in-out infinite;}
-  @keyframes dotGlow{0%,100%{box-shadow:0 0 0 5px rgba(232,162,61,.18);}50%{box-shadow:0 0 0 9px rgba(232,162,61,.28);}}
-  .brand p{color:var(--ink-soft);font-size:.92rem;margin-top:2px;}
+  .app{width:100%;max-width:480px;}
+  h1,h2,h3{font-family:'Geist',system-ui,sans-serif;margin:0;letter-spacing:-0.025em;}
+  h3{font-size:1.25rem;font-weight:700;}
+  .ph, .ph-fill, .ph-bold{line-height:1;}
 
+  /* Brand */
+  .brand{text-align:center;margin:8px 0 22px;}
+  .brand h1{font-size:2.5rem;font-weight:800;letter-spacing:-0.045em;line-height:1.05;color:var(--ink);}
+  .brand .signal{width:150px;height:12px;display:flex;align-items:center;justify-content:center;margin:12px auto 8px;}
+  .signal .dash{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--ink-soft) 0 8px, transparent 8px 13px, var(--ink-soft) 13px 15px, transparent 15px 20px);opacity:.45;}
+  .signal .dot{width:8px;height:8px;border-radius:2px;background:var(--p1);margin:0 10px;transform:rotate(45deg);}
+  .brand p{color:var(--ink-soft);font-size:.95rem;margin:2px 0 0;}
+
+  /* Segmented toggles (language, turn length, categories, difficulty) */
   .toggle-row{display:flex;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-  .toggle-row button{padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink-soft);transition:transform .15s ease, box-shadow .15s ease;}
-  .toggle-row button.active{background:linear-gradient(120deg,var(--p1),var(--gold));color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(232,84,107,.35);transform:translateY(-1px);}
-  .toggle-row button:active{transform:scale(.94);}
-  .field-label{text-align:center;font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-  .profile-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:.95rem;font-weight:600;}
-
-  @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
-  .card{
-    background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:26px 24px;
-    box-shadow:0 10px 30px -12px rgba(43,38,48,.18), 0 1px 2px rgba(43,38,48,.05);
-    margin-bottom:16px;animation:cardIn .38s cubic-bezier(.2,.9,.3,1.2) both;
+  .toggle-row button{
+    padding:8px 14px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--surface);
+    font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--ink-soft);
+    transition:transform .2s var(--ease), background-color .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
   }
-  label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
-  input[type=text]{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);font-size:1rem;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;margin-bottom:16px;transition:border-color .15s ease, box-shadow .15s ease;}
-  input[type=text]:focus{border-color:var(--p2);box-shadow:0 0 0 4px rgba(31,111,120,.14);}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:.98rem;cursor:pointer;transition:transform .12s cubic-bezier(.3,1.5,.6,1), opacity .12s ease, box-shadow .12s ease;}
-  .btn:active{transform:scale(.96);}
-  .btn:disabled{opacity:.45;cursor:not-allowed;}
-  .btn-primary{background:linear-gradient(120deg,var(--p1),var(--gold));color:#fff;box-shadow:0 6px 16px -4px rgba(232,84,107,.45);}
-  .btn-primary:not(:disabled):hover{box-shadow:0 8px 20px -4px rgba(232,84,107,.55);transform:translateY(-1px);}
-  .btn-secondary{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+  .toggle-row button.active{background:var(--ink);color:var(--on-ink);border-color:var(--ink);}
+  .toggle-row button:active{transform:scale(.96);}
+  .field-label{text-align:center;font-size:.8rem;font-weight:600;color:var(--ink-soft);margin-bottom:8px;}
+  .profile-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:1rem;font-weight:600;}
+
+  /* Cards */
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-box);padding:24px 22px;
+    box-shadow:0 12px 32px -18px var(--shadow);
+    margin-bottom:14px;animation:cardIn .45s var(--ease) both;
+  }
+
+  /* Forms */
+  label{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:8px;}
+  input[type=text]{
+    width:100%;padding:13px 14px;border-radius:var(--r-ctl);border:1px solid var(--line);font-size:1rem;
+    font-family:inherit;color:var(--ink);background:var(--bg);outline:none;margin-bottom:16px;
+    transition:border-color .2s var(--ease), box-shadow .2s var(--ease), background-color .2s var(--ease);
+  }
+  input[type=text]::placeholder{color:var(--ink-soft);opacity:1;}
+  input[type=text]:focus{border-color:var(--ink);background:var(--surface);box-shadow:0 0 0 3px var(--surface-2);}
+
+  /* Buttons */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;
+    border-radius:var(--r-ctl);border:none;font-family:inherit;font-weight:600;font-size:1rem;cursor:pointer;
+    white-space:nowrap;
+    transition:transform .2s var(--ease), opacity .2s var(--ease), background-color .2s var(--ease);
+  }
+  .btn .ph, .btn .ph-fill{font-size:1.15em;}
+  .btn:active{transform:scale(.98) translateY(1px);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:var(--ink);color:var(--on-ink);}
+  .btn-primary:not(:disabled):hover{opacity:.9;}
+  .btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn-secondary:not(:disabled):hover{background:var(--surface-2);}
   .btn-row{display:flex;gap:10px;margin-top:4px;}
   .btn-row .btn{margin:0;}
-  .btn-link{background:none;border:none;color:var(--ink-soft);font-size:.8rem;text-decoration:underline;cursor:pointer;padding:6px;width:100%;}
-  .btn-sm{padding:9px 14px;font-size:.85rem;width:auto;}
+  .btn-link{background:none;border:none;color:var(--ink-soft);font-family:inherit;font-size:.85rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px;width:100%;}
+  .btn-sm{padding:9px 14px;font-size:.88rem;width:auto;}
 
-  .error{color:var(--p1);font-size:.85rem;margin:-8px 0 14px;font-weight:600;}
-  .hint{color:var(--ink-soft);font-size:.82rem;margin-top:-8px;}
+  .error{color:var(--p1);font-size:.88rem;margin:-8px 0 14px;font-weight:600;}
+  .hint{color:var(--ink-soft);font-size:.86rem;line-height:1.45;margin-top:-8px;}
+  .hint .ph, .hint .ph-fill{vertical-align:-2px;margin-right:4px;}
 
+  /* Room code */
   .code-display{text-align:center;padding:18px 0 6px;}
-  .code-display .code{font-family:'Fraunces',serif;font-size:2.6rem;font-weight:700;letter-spacing:.18em;background:linear-gradient(120deg,var(--p2),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .waiting-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--p2);animation:pulse 1.2s infinite ease-in-out;margin-right:6px;}
+  .code-display .code{
+    display:inline-block;font-family:'Geist Mono',ui-monospace,monospace;font-size:2.4rem;font-weight:700;
+    letter-spacing:.22em;padding:10px 6px 10px 20px;border-radius:var(--r-ctl);background:var(--p2-soft);color:var(--p2);
+  }
+  .waiting-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--p2);margin-right:8px;vertical-align:1px;}
+  @media (prefers-reduced-motion: no-preference){
+    .waiting-pulse{animation:pulse 1.4s infinite ease-in-out;}
+  }
   @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
 
+  /* Players */
   .players-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
-  .player-chip{flex:1;background:var(--p1-soft);border-radius:14px;padding:10px 14px;text-align:center;transition:transform .2s ease;}
+  .player-chip{flex:1;background:var(--p1-soft);border-radius:var(--r-ctl);padding:10px 14px;text-align:center;}
   .player-chip.p2{background:var(--p2-soft);}
-  .player-chip .name{font-weight:700;font-size:.92rem;}
+  .player-chip .name{font-weight:700;font-size:.95rem;}
   .player-chip.p1 .name{color:var(--p1);}
   .player-chip.p2 .name{color:var(--p2);}
-  .player-chip .role-label{font-size:.7rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
-  .link-mid{flex:0 0 auto;font-size:.9rem;color:var(--ink-soft);}
+  .player-chip .role-label{font-size:.75rem;color:var(--ink-soft);}
+  .link-mid{flex:0 0 auto;font-size:1.1rem;color:var(--ink-soft);display:flex;}
 
-  .score-row{display:flex;justify-content:center;align-items:baseline;gap:22px;margin:2px 0 18px;}
+  /* Score */
+  .score-row{display:flex;justify-content:center;align-items:baseline;gap:24px;margin:2px 0 18px;}
   .score-row .score-item{text-align:center;}
-  .score-row .score-name{display:block;font-size:.68rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
-  .score-row .score-num{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;animation:popIn .3s cubic-bezier(.3,1.6,.5,1) both;}
+  .score-row .score-name{display:block;font-size:.75rem;color:var(--ink-soft);margin-bottom:2px;}
+  .score-row .score-num{font-family:'Geist Mono',ui-monospace,monospace;font-size:1.8rem;font-weight:700;animation:popIn .4s var(--ease) both;}
   .score-row .score-sep{color:var(--line);font-size:1.2rem;}
-  @keyframes popIn{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+  @keyframes popIn{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
 
-  .word-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px;}
+  /* Letter tiles */
+  .word-row{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:14px 0 4px;}
   .word-row .slot{
-    width:36px;height:44px;border-radius:10px;border:2px solid var(--line);background:#fff;
-    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;
-    transition:transform .15s ease;
+    width:clamp(26px, calc((100% - 42px) / 8), 40px);aspect-ratio:5 / 6;height:auto;border-radius:var(--r-tile);border:1.5px solid var(--line);background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Geist Mono',ui-monospace,monospace;font-size:1.35rem;font-weight:700;text-transform:uppercase;
   }
-  .word-row.mine .slot{border-color:rgba(232,84,107,.35);}
-  .word-row.theirs .slot{border-color:rgba(31,111,120,.35);}
-  .word-row.mine .slot:not(:empty){background:var(--p1-soft);border-color:var(--p1);color:var(--p1);animation:tilePop .28s cubic-bezier(.3,1.6,.5,1) both;}
-  .word-row.theirs .slot:not(:empty){background:var(--p2-soft);border-color:var(--p2);color:var(--p2);animation:tilePop .28s cubic-bezier(.3,1.6,.5,1) both;}
-  @keyframes tilePop{from{transform:scale(.5) rotate(-8deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
-  .section-label{font-size:.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:18px;margin-bottom:2px;}
+  .word-row.mine .slot{border-style:dashed;border-color:color-mix(in srgb, var(--p1) 40%, var(--line));}
+  .word-row.theirs .slot{border-style:dashed;border-color:color-mix(in srgb, var(--p2) 40%, var(--line));}
+  .word-row.mine .slot:not(:empty){border-style:solid;background:var(--p1-soft);border-color:var(--p1);color:var(--p1);animation:tilePop .35s var(--ease) both;}
+  .word-row.theirs .slot:not(:empty){border-style:solid;background:var(--p2-soft);border-color:var(--p2);color:var(--p2);animation:tilePop .35s var(--ease) both;}
+  @keyframes tilePop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .section-label{font-size:.82rem;font-weight:600;color:var(--ink-soft);text-align:center;margin-top:18px;margin-bottom:2px;}
 
-  .turn-banner{text-align:center;padding:10px 12px;border-radius:12px;font-weight:700;font-size:.92rem;margin-bottom:10px;}
-  .turn-banner.mine{background:var(--p1-soft);color:var(--p1);box-shadow:0 0 0 2px rgba(232,84,107,.25);animation:turnGlow 1.8s ease-in-out infinite;}
-  @keyframes turnGlow{0%,100%{box-shadow:0 0 0 2px rgba(232,84,107,.2);}50%{box-shadow:0 0 0 5px rgba(232,84,107,.35);}}
+  /* Turn state */
+  .turn-banner{text-align:center;padding:11px 12px;border-radius:var(--r-ctl);font-weight:700;font-size:.95rem;margin-bottom:10px;}
+  .turn-banner.mine{background:var(--p1);color:var(--on-ink);}
+  @media (prefers-color-scheme: dark){ .turn-banner.mine{color:#15141A;} }
   .turn-banner.theirs{background:var(--p2-soft);color:var(--p2);}
-  .turn-banner.pause{background:#FFF3DC;color:#8A6416;}
+  .turn-banner.pause{background:var(--warn-soft);color:var(--warn);}
 
   .timer-wrap{margin-bottom:10px;}
-  .timer-bar-outer{width:100%;height:7px;background:var(--line);border-radius:6px;overflow:hidden;}
-  .timer-bar-inner{height:100%;background:linear-gradient(90deg,var(--gold),var(--p1));transition:width 1s linear;}
-  .timer-text{text-align:center;font-size:.74rem;color:var(--ink-soft);margin-top:5px;}
+  .timer-bar-outer{width:100%;height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+  .timer-bar-inner{height:100%;background:var(--ink);transition:width 1s linear;}
+  .timer-text{text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:.78rem;color:var(--ink-soft);margin-top:6px;}
 
-  .pause-box{background:#FFF9EE;border:1px solid #F0DCA8;border-radius:14px;padding:14px;text-align:center;margin-bottom:16px;}
-  .pause-box p{margin:0 0 10px;font-size:.88rem;color:#8A6416;font-weight:600;}
+  .pause-box{background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r-ctl);padding:14px;text-align:center;margin-bottom:16px;}
+  .pause-box p{margin:0 0 10px;font-size:.9rem;color:var(--warn);font-weight:600;}
   .pause-box .btn-row{gap:8px;}
   .pause-link-row{text-align:center;margin-bottom:14px;}
 
-  .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:16px;}
+  /* Keyboard */
+  .keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;}
   .key{
-    padding:11px 0;border-radius:9px;border:none;background:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:.88rem;
-    cursor:pointer;color:var(--ink);box-shadow:0 3px 0 var(--line), 0 3px 6px rgba(43,38,48,.06);
-    transition:transform .1s ease, box-shadow .1s ease;
+    padding:12px 0;border-radius:var(--r-tile);border:1px solid var(--line);background:var(--surface);
+    font-family:'Geist Mono',ui-monospace,monospace;font-weight:600;font-size:.95rem;text-transform:uppercase;
+    cursor:pointer;color:var(--ink);box-shadow:0 2px 0 var(--line);
+    transition:transform .12s var(--ease), box-shadow .12s var(--ease);
   }
   .key:disabled{cursor:not-allowed;}
-  .key.hit{background:var(--p2);color:#fff;box-shadow:0 3px 0 #124851;animation:keyHit .35s ease;}
-  @keyframes keyHit{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
-  .key.miss{background:#F1EEF6;color:var(--ink-soft);text-decoration:line-through;box-shadow:0 3px 0 var(--line);animation:keyMiss .3s ease;}
+  .key.hit{background:var(--p2);border-color:var(--p2);color:var(--on-ink);box-shadow:0 2px 0 color-mix(in srgb, var(--p2) 60%, #000);animation:keyHit .35s var(--ease);}
+  @media (prefers-color-scheme: dark){ .key.hit{color:#15141A;} }
+  @keyframes keyHit{0%{transform:scale(1);}40%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .key.miss{background:var(--surface-2);color:var(--ink-soft);text-decoration:line-through;box-shadow:none;opacity:.7;animation:keyMiss .3s ease;}
   @keyframes keyMiss{0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
-  .key:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 var(--line);}
+  .key:not(:disabled):active{transform:translateY(2px);box-shadow:0 0 0 var(--line);}
 
-  .winner-screen{text-align:center;padding:20px 0 4px;}
-  .winner-screen .trophy{font-size:3rem;display:inline-block;animation:trophyBounce 1.1s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(232,162,61,.45));}
-  @keyframes trophyBounce{0%,100%{transform:translateY(0) rotate(0deg);}30%{transform:translateY(-10px) rotate(-8deg);}60%{transform:translateY(0) rotate(8deg);}}
-  .winner-screen h2{font-size:1.7rem;margin-top:6px;animation:popIn .4s cubic-bezier(.3,1.6,.5,1) both;}
+  /* End screen */
+  .winner-screen{text-align:center;padding:22px 22px 6px;}
+  .winner-screen .trophy{
+    width:64px;height:64px;margin:0 auto;border-radius:var(--r-box);display:flex;align-items:center;justify-content:center;
+    font-size:2rem;background:var(--warn-soft);color:var(--warn);animation:popIn .5s var(--ease) both;
+  }
+  .winner-screen h2{font-size:1.75rem;font-weight:800;margin-top:14px;animation:popIn .5s var(--ease) .08s both;}
   .reveal-words{display:flex;gap:12px;justify-content:center;margin:18px 0 6px;flex-wrap:wrap;}
-  .reveal-words div{background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 16px;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;}
-  .def-btn{background:none;border:none;color:var(--p2);font-size:.95rem;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;}
-  .def-box{font-family:'Inter',sans-serif;font-size:.8rem;color:var(--ink-soft);margin-top:6px;text-align:left;line-height:1.4;}
+  .reveal-words div{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-ctl);padding:10px 16px;font-family:'Geist Mono',ui-monospace,monospace;font-size:1.05rem;font-weight:600;text-transform:uppercase;}
+  .def-btn{background:none;border:none;color:var(--p2);font-size:1rem;cursor:pointer;padding:0 0 0 6px;vertical-align:middle;}
+  .def-box{font-family:'Geist',system-ui,sans-serif;font-size:.84rem;color:var(--ink-soft);margin-top:8px;text-align:left;line-height:1.45;text-transform:none;font-weight:400;max-width:34ch;}
 
   .history-list{margin-top:8px;text-align:left;max-height:180px;overflow-y:auto;}
-  .history-item{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:7px 2px;border-bottom:1px dashed var(--line);}
-  .history-item:last-child{border-bottom:none;}
-  .history-round{color:var(--ink-soft);}
-  .history-winner{font-weight:600;}
+  .history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.88rem;padding:8px 2px;}
+  .history-item + .history-item{border-top:1px solid var(--line);}
+  .history-round{color:var(--ink-soft);font-family:'Geist Mono',ui-monospace,monospace;font-size:.8rem;}
+  .history-winner{font-weight:600;display:inline-flex;align-items:center;gap:6px;}
 
-  .footer-note{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:18px;line-height:1.5;}
+  .footer-note{text-align:center;color:var(--ink-soft);font-size:.8rem;margin-top:18px;line-height:1.6;}
+  .footer-note a{text-underline-offset:3px;}
 
+  /* Confetti (win feedback only) */
   .confetti-piece{position:fixed;top:-24px;width:8px;height:14px;opacity:.95;pointer-events:none;z-index:9999;border-radius:2px;}
+  .confetti-piece.confetti-heart{width:auto;height:auto;background:none;line-height:1;}
   @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(105vh) rotate(420deg);opacity:.25;}}
 
   .music-toggle{
-    position:fixed;top:calc(14px + var(--safe-t));right:14px;width:44px;height:44px;border-radius:50%;background:#fff;
-    border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;
-    box-shadow:0 4px 12px rgba(43,38,48,.12);z-index:200;transition:transform .15s cubic-bezier(.3,1.6,.5,1);
+    position:fixed;top:calc(14px + var(--safe-t));right:14px;width:44px;height:44px;border-radius:var(--r-ctl);
+    background:var(--surface);color:var(--ink);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-size:1.25rem;cursor:pointer;z-index:200;transition:transform .2s var(--ease);
   }
-  .music-toggle:active{transform:scale(.88) rotate(-12deg);}
+  .music-toggle:active{transform:scale(.92);}
 
+  /* Ambient hearts: brand motif, two player colors only, off under reduced motion */
   .bg-hearts{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
   .bg-hearts .h{position:absolute;bottom:-12vh;left:0;opacity:0;line-height:1;animation:heartFloat linear infinite;}
   @keyframes heartFloat{
-    0%{transform:translateY(0) translateX(0) rotate(-6deg) scale(.85);opacity:0;}
-    8%{opacity:var(--h-op,.14);}
-    50%{transform:translateY(-55vh) translateX(var(--drift,12px)) rotate(6deg) scale(1);}
-    92%{opacity:var(--h-op,.14);}
-    100%{transform:translateY(-115vh) translateX(calc(var(--drift,12px) * -1)) rotate(-4deg) scale(1.12);opacity:0;}
+    0%{transform:translateY(0) translateX(0) scale(.9);opacity:0;}
+    10%{opacity:var(--h-op,.10);}
+    50%{transform:translateY(-55vh) translateX(var(--drift,12px)) scale(1);}
+    90%{opacity:var(--h-op,.10);}
+    100%{transform:translateY(-115vh) translateX(calc(var(--drift,12px) * -1)) scale(1.05);opacity:0;}
   }
 
-  .confetti-piece.confetti-heart{width:auto;height:auto;background:none;line-height:1;}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 
-  .btn-primary{animation:btnGlow 3.4s ease-in-out infinite;}
-  @keyframes btnGlow{
-    0%,100%{box-shadow:0 6px 16px -4px rgba(232,84,107,.45);}
-    50%{box-shadow:0 9px 22px -3px rgba(232,84,107,.62);}
+  @media (prefers-reduced-motion: reduce){
+    .bg-hearts{display:none;}
+    .confetti-piece{display:none;}
+    *, *::before, *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
   }
 </style>
 </head>
 <body>
 <div class="bg-hearts" id="bgHearts" aria-hidden="true"></div>
-<button class="music-toggle" id="musicToggle" title="Musique">🔊</button>
+<button class="music-toggle" id="musicToggle" title="Musique" aria-label="Musique"><i class="ph ph-speaker-high"></i></button>
 <div class="app" id="app" style="position:relative;z-index:1;">
   <div class="brand">
     <h1 id="brandTitle">Cœur Codé</h1>
@@ -225,15 +299,15 @@ const T = {
     profileTitle: "Bienvenue !",
     profileHint: "Comment tu t'appelles ? On ne te le redemandera plus sur cet appareil.",
     continueBtn: "Continuer",
-    greeting: "Salut {name} 👋",
+    greeting: "Salut {name}",
     editProfileBtn: "Changer",
     resumeSessionBtn: "↺ Reprendre la partie {code}",
     joiningAs: "Tu rejoins en tant que {name}.",
-    randomMatchBtn: "🎲 Partie surprise (avec un·e inconnu·e)",
-    randomMatchHint: "Aucune messagerie — juste le jeu de mots, rien d'autre.",
+    randomMatchBtn: "Partie surprise",
+    randomMatchHint: "Aucune messagerie, juste le jeu de mots, rien d'autre.",
     searchingLabel: "Recherche d'un·e partenaire…",
     cancelSearchBtn: "Annuler",
-    aiModeBtn: "🤖 Contre l'ordinateur",
+    aiModeBtn: "Contre l'ordinateur",
     aiSetupTitle: "Défie l'ordinateur",
     aiSetupHint: "Choisis la difficulté, puis ton mot secret. L'ordinateur choisit le sien automatiquement.",
     aiDifficultyLabel: "Difficulté",
@@ -266,10 +340,10 @@ const T = {
     wordPlaceholder: "Ex : OCEAN",
     errWordLen: "Choisis un mot de 3 lettres minimum.",
     submitWordBtn: "Valider mon mot",
-    wordSavedWaiting: "Mot enregistré — en attente de l'autre joueur…",
+    wordSavedWaiting: "Mot enregistré, en attente de l'autre joueur…",
     youLabel: "Toi",
     partnerLabel: "Partenaire",
-    yourTurn: "À toi de jouer — propose une lettre",
+    yourTurn: "À toi de jouer, propose une lettre",
     partnerThinking: "{name} réfléchit…",
     opponentWordLabel: "Le mot de {name} (ce que tu as trouvé)",
     yourWordLabel: "Ton mot (ce que {name} a trouvé)",
@@ -284,9 +358,9 @@ const T = {
     scoreLabel: "Score de la série",
     historyLabel: "Historique de la série",
     historyRound: "Manche {round}",
-    historyWinner: "🏆 {name}",
+    historyWinner: "{name}",
     pauseRequestBtn: "Demander une pause",
-    pausePendingSelf: "Demande de pause envoyée — en attente de {name}…",
+    pausePendingSelf: "Demande de pause envoyée, en attente de {name}…",
     pausePendingOther: "{name} demande une pause",
     acceptBtn: "Accepter",
     declineBtn: "Refuser",
@@ -302,13 +376,13 @@ const T = {
     category_sports: "Sport & loisirs",
     category_emotions: "Émotions & récits",
     categoryHint: "Juste une inspiration : le mot que tu choisiras n'est jamais vérifié par rapport au thème.",
-    categorySuggested: "💡 Thème suggéré : {theme}",
+    categorySuggested: "Thème suggéré : {theme}",
     hintRequestBtn: "Demander un indice",
-    hintPendingSelf: "Demande d'indice envoyée — en attente de {name}…",
+    hintPendingSelf: "Demande d'indice envoyée, en attente de {name}…",
     hintPendingOther: "{name} demande un indice sur ton mot",
-    hintPendingOtherForced: "{name} demande un indice sur ton mot — tu lui en dois un, impossible de refuser.",
+    hintPendingOtherForced: "{name} demande un indice sur ton mot, tu lui en dois un, impossible de refuser.",
     giveHintBtn: "Donner l'indice",
-    hintDebtNotice: "💡 Tu dois un indice à {name} s'il/elle t'en demande un."
+    hintDebtNotice: "Tu dois un indice à {name} s'il/elle t'en demande un."
   },
   en: {
     tagline: "Each of you picks a secret word. First to crack the other's word wins.",
@@ -317,15 +391,15 @@ const T = {
     profileTitle: "Welcome!",
     profileHint: "What's your first name? We won't ask again on this device.",
     continueBtn: "Continue",
-    greeting: "Hi {name} 👋",
+    greeting: "Hi {name}",
     editProfileBtn: "Change",
     resumeSessionBtn: "↺ Resume game {code}",
     joiningAs: "Joining as {name}.",
-    randomMatchBtn: "🎲 Surprise match (with a stranger)",
-    randomMatchHint: "No chat — just the word game, nothing else.",
+    randomMatchBtn: "Surprise match",
+    randomMatchHint: "No chat, just the word game, nothing else.",
     searchingLabel: "Looking for a partner…",
     cancelSearchBtn: "Cancel",
-    aiModeBtn: "🤖 Against the computer",
+    aiModeBtn: "Against the computer",
     aiSetupTitle: "Challenge the computer",
     aiSetupHint: "Pick a difficulty, then your secret word. The computer picks its own automatically.",
     aiDifficultyLabel: "Difficulty",
@@ -358,10 +432,10 @@ const T = {
     wordPlaceholder: "e.g. OCEAN",
     errWordLen: "Pick a word of at least 3 letters.",
     submitWordBtn: "Confirm my word",
-    wordSavedWaiting: "Word saved — waiting for the other player…",
+    wordSavedWaiting: "Word saved, waiting for the other player…",
     youLabel: "You",
     partnerLabel: "Partner",
-    yourTurn: "Your turn — suggest a letter",
+    yourTurn: "Your turn, suggest a letter",
     partnerThinking: "{name} is thinking…",
     opponentWordLabel: "{name}'s word (what you've found)",
     yourWordLabel: "Your word (what {name} has found)",
@@ -376,9 +450,9 @@ const T = {
     scoreLabel: "Series score",
     historyLabel: "Series history",
     historyRound: "Round {round}",
-    historyWinner: "🏆 {name}",
+    historyWinner: "{name}",
     pauseRequestBtn: "Request a pause",
-    pausePendingSelf: "Pause request sent — waiting for {name}…",
+    pausePendingSelf: "Pause request sent, waiting for {name}…",
     pausePendingOther: "{name} is requesting a pause",
     acceptBtn: "Accept",
     declineBtn: "Decline",
@@ -393,14 +467,14 @@ const T = {
     category_jobs: "Jobs & places",
     category_sports: "Sports & hobbies",
     category_emotions: "Emotions & stories",
-    categoryHint: "Just for inspiration — the word you pick is never checked against the theme.",
-    categorySuggested: "💡 Suggested theme: {theme}",
+    categoryHint: "Just for inspiration, the word you pick is never checked against the theme.",
+    categorySuggested: "Suggested theme: {theme}",
     hintRequestBtn: "Ask for a hint",
-    hintPendingSelf: "Hint request sent — waiting for {name}…",
+    hintPendingSelf: "Hint request sent, waiting for {name}…",
     hintPendingOther: "{name} is asking for a hint about your word",
-    hintPendingOtherForced: "{name} is asking for a hint about your word — you owe them one, so you can't decline.",
+    hintPendingOtherForced: "{name} is asking for a hint about your word, you owe them one, so you can't decline.",
     giveHintBtn: "Give the hint",
-    hintDebtNotice: "💡 You owe {name} a hint if they ask for one."
+    hintDebtNotice: "You owe {name} a hint if they ask for one."
   }
 };
 let currentLang = 'fr';
@@ -823,9 +897,9 @@ function fingerprint(room){
 (function initBackgroundHearts(){
   const wrap = document.getElementById('bgHearts');
   if(!wrap) return;
-  const glyphs = ['♥','❤'];
-  const colors = ['var(--p1)','var(--p2)','var(--gold)','var(--purple)','var(--blue)'];
-  const count = 9;
+  const glyphs = ['♥'];
+  const colors = ['var(--p1)','var(--p2)'];
+  const count = 7;
   for(let i=0;i<count;i++){
     const el = document.createElement('span');
     el.className = 'h';
@@ -834,7 +908,7 @@ function fingerprint(room){
     el.style.fontSize = (16 + Math.random()*22) + 'px';
     el.style.color = colors[Math.floor(Math.random()*colors.length)];
     el.style.setProperty('--drift', (Math.random()*40 - 20) + 'px');
-    el.style.setProperty('--h-op', (0.08 + Math.random()*0.10).toFixed(2));
+    el.style.setProperty('--h-op', (0.06 + Math.random()*0.07).toFixed(2));
     el.style.animationDuration = (16 + Math.random()*14) + 's';
     el.style.animationDelay = (-Math.random()*20) + 's';
     wrap.appendChild(el);
@@ -843,8 +917,8 @@ function fingerprint(room){
 
 /* ---------- Confetti ---------- */
 function spawnConfetti(){
-  const colors = ['#E8546B','#1F6F78','#E8A23D','#B784E0','#5AA8D6'];
-  const heartGlyphs = ['♥','❤','💛','💗'];
+  const colors = ['var(--p1)','var(--p2)','var(--warn)','var(--ink)'];
+  const heartGlyphs = ['♥'];
   for(let i=0;i<60;i++){
     const piece = document.createElement('div');
     const isHeart = Math.random() < 0.3;
@@ -931,11 +1005,11 @@ function renderLanding(){
         <button class="btn btn-primary" id="createBtn">${tr('createBtn')}</button>
         <button class="btn btn-secondary" id="joinBtn">${tr('joinBtn')}</button>
       </div>
-      <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;">${tr('randomMatchBtn')}</button>
+      <button class="btn btn-secondary" id="randomBtn" style="margin-top:10px;"><i class="ph ph-shuffle"></i>${tr('randomMatchBtn')}</button>
       <p class="hint" style="text-align:center;margin-top:8px;">${tr('randomMatchHint')}</p>
-      <button class="btn btn-secondary" id="aiBtn" style="margin-top:10px;">${tr('aiModeBtn')}</button>
+      <button class="btn btn-secondary" id="aiBtn" style="margin-top:10px;"><i class="ph ph-robot"></i>${tr('aiModeBtn')}</button>
     </div>
-    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="https://me.fedapay.com/coeur-code" target="_blank" rel="noopener" style="color:inherit;">☕ Soutenir le jeu</a></div>
+    <div class="footer-note"><a href="privacy.html" style="color:inherit;">Politique de confidentialité</a> · <a href="https://me.fedapay.com/coeur-code" target="_blank" rel="noopener" style="color:inherit;">Soutenir le jeu</a></div>
   `;
   document.querySelectorAll('.toggle-row button[data-lang]').forEach(b => {
     b.onclick = () => { selectedLang = b.getAttribute('data-lang'); renderLanding(); };
@@ -1176,7 +1250,7 @@ function renderWordSetup(room){
     <div class="card">
       <h3 style="margin-bottom:6px;">${tr('chooseWordTitle')}</h3>
       <p class="hint" style="margin-bottom:16px;">${tr('chooseWordHint')}</p>
-      ${room.category && room.category !== 'random' ? `<p class="hint" style="margin-bottom:16px;">${tr('categorySuggested',{theme:tr('category_'+room.category)})}</p>` : ''}
+      ${room.category && room.category !== 'random' ? `<p class="hint" style="margin-bottom:16px;"><i class="ph ph-lightbulb"></i>${tr('categorySuggested',{theme:tr('category_'+room.category)})}</p>` : ''}
       ${already
         ? `<div class="turn-banner mine"><span class="waiting-pulse"></span>${tr('wordSavedWaiting')}</div>`
         : `<input type="text" id="wordInput" placeholder="${tr('wordPlaceholder')}" maxlength="15">
@@ -1338,7 +1412,7 @@ function renderGame(room){
   }
   const owedByMe = (hints[myRole+'Debt'] || 0) > 0;
   const hintDebtNoticeHtml = (owedByMe && hintReq.status === 'none')
-    ? `<p class="hint" style="text-align:center;margin-bottom:10px;">${tr('hintDebtNotice',{name:opp.name})}</p>` : '';
+    ? `<p class="hint" style="text-align:center;margin-bottom:10px;"><i class="ph ph-lightbulb"></i>${tr('hintDebtNotice',{name:opp.name})}</p>` : '';
 
   const showTimer = hasTimer && pause.status === 'none';
   const showPauseRequestLink = pause.status === 'none';
@@ -1348,13 +1422,13 @@ function renderGame(room){
     <div class="card">
       <div class="players-row">
         <div class="player-chip ${myRole}"><div class="role-label">${tr('youLabel')}</div><div class="name">${me.name}</div></div>
-        <div class="link-mid">⟷</div>
+        <div class="link-mid"><i class="ph ph-arrows-left-right"></i></div>
         <div class="player-chip ${oppRole}"><div class="role-label">${tr('partnerLabel')}</div><div class="name">${opp.name}</div></div>
       </div>
 
       <div class="score-row">
         <div class="score-item"><span class="score-name">${me.name}</span><span class="score-num">${scores[myRole]||0}</span></div>
-        <div class="score-sep">–</div>
+        <div class="score-sep">:</div>
         <div class="score-item"><span class="score-name">${opp.name}</span><span class="score-num">${scores[oppRole]||0}</span></div>
       </div>
 
@@ -1790,13 +1864,13 @@ function renderEndScreen(room){
         ${history.slice().reverse().map(h => `
           <div class="history-item">
             <span class="history-round">${tr('historyRound',{round:h.round})}</span>
-            <span class="history-winner">${tr('historyWinner',{name:h.winnerName})}</span>
+            <span class="history-winner"><i class="ph-fill ph-trophy"></i>${tr('historyWinner',{name:h.winnerName})}</span>
           </div>
         `).join('')}
       </div>` : '';
   screenEl.innerHTML = `
     <div class="card winner-screen">
-      <div class="trophy">🏆</div>
+      <div class="trophy"><i class="ph-fill ${iWon ? 'ph-trophy' : 'ph-heart'}"></i></div>
       <h2>${iWon ? tr('youWon') : tr('theyWon',{name:room.players[room.winner].name})}</h2>
       <p class="hint">${iWon ? tr('youWonSub') : tr('theyWonSub')}</p>
       <div class="reveal-words">
@@ -1810,7 +1884,7 @@ function renderEndScreen(room){
       <div class="section-label" style="margin-top:20px;">${tr('scoreLabel')}</div>
       <div class="score-row">
         <div class="score-item"><span class="score-name">${p1.name}</span><span class="score-num">${scores.p1||0}</span></div>
-        <div class="score-sep">–</div>
+        <div class="score-sep">:</div>
         <div class="score-item"><span class="score-name">${p2.name}</span><span class="score-num">${scores.p2||0}</span></div>
       </div>
       ${historyHtml}
@@ -2010,7 +2084,7 @@ function setMusicMood(mood){
 
 document.getElementById('musicToggle').onclick = () => {
   musicEnabled = !musicEnabled;
-  document.getElementById('musicToggle').textContent = musicEnabled ? '🔊' : '🔇';
+  document.getElementById('musicToggle').innerHTML = musicEnabled ? '<i class="ph ph-speaker-high"></i>' : '<i class="ph ph-speaker-slash"></i>';
   if(musicEnabled){ ensureAudioStarted(); } else { stopCurrentMood(); }
 };
 document.addEventListener('click', function firstGestureUnlock(){
